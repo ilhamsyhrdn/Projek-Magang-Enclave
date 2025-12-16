@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Sidebar from "@/app/components/Sidebar";
+import Sidebar from "@/app/components/sidebar-admin";
 import { Menu } from "lucide-react";
 
-export default function ArsipPage() {
+export default function JabatanPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
@@ -26,10 +26,10 @@ export default function ArsipPage() {
 
         <div className="px-6 lg:px-10 pb-10">
           <h1 className="font-['Poppins'] font-medium text-[#1e1e1e] text-[40px]">
-            Arsip
+            Data Master - Jabatan/Posisi
           </h1>
           <p className="font-['Poppins'] font-light text-black text-xl">
-            Halaman untuk mengelola arsip dokumen
+            Halaman untuk mengelola data jabatan/posisi
           </p>
         </div>
       </div>

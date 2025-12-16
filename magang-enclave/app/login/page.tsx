@@ -11,8 +11,9 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login:", { email, password });
-    router.push("/beranda");
+    console.log("Login attempt:", { email, password });
+    // Navigate to admin dashboard
+    router.push("/beranda-admin");
   };
 
   return (

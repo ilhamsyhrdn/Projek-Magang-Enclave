@@ -27,12 +27,12 @@ export default function Sidebar({
   const [isDataMasterOpen, setIsDataMasterOpen] = useState(false);
 
   const dataSubMenu = [
-    { id: "divisi", label: "Divisi", path: "/data-master/divisi" },
-    { id: "departemen", label: "Departemen", path: "/data-master/departemen" },
-    { id: "jabatan", label: "Jabatan/Posisi", path: "/data-master/jabatan" },
-    { id: "pegawai", label: "Pegawai", path: "/data-master/pegawai" },
-    { id: "kategori", label: "Kategori", path: "/data-master/kategori" },
-    { id: "dokumen-template", label: "Dokumen Template", path: "/data-master/dokumen-template" },
+    { id: "divisi", label: "Divisi", path: "/data-master-admin/divisi" },
+    { id: "departemen", label: "Departemen", path: "/data-master-admin/departemen" },
+    { id: "jabatan", label: "Jabatan/Posisi", path: "/data-master-admin/jabatan" },
+    { id: "pegawai", label: "Pegawai", path: "/data-master-admin/pegawai" },
+    { id: "kategori", label: "Kategori", path: "/data-master-admin/kategori" },
+    { id: "dokumen-template", label: "Dokumen Template", path: "/data-master-admin/dokumen-template" },
   ];
 
   const handleLogout = () => {
@@ -115,13 +115,13 @@ export default function Sidebar({
         <nav className="px-4 space-y-1 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {/* Beranda */}
           <Link
-            href="/beranda"
+            href="/beranda-admin"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/beranda" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/beranda-admin" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <LayoutDashboard size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -132,14 +132,14 @@ export default function Sidebar({
 
           {/* Daftar Surat */}
           <Link
-            href="/daftar-surat"
+            href="/daftar-surat-admin"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
               ${
-                pathname === "/daftar-surat"
+                pathname === "/daftar-surat-admin"
                   ? "bg-[#bcdff6]"
                   : "hover:bg-gray-50"
               }
@@ -153,13 +153,13 @@ export default function Sidebar({
 
           {/* Arsip */}
           <Link
-            href="/arsip"
+            href="/arsip-admin"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/arsip" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/arsip-admin" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Archive size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -175,7 +175,7 @@ export default function Sidebar({
               className={`
                 w-full flex items-center justify-between px-4 py-3 rounded-[10px] transition-colors
                 ${
-                  pathname.startsWith("/data-master")
+                  pathname.startsWith("/data-master-admin")
                     ? "bg-[#bcdff6]"
                     : "hover:bg-gray-50"
                 }

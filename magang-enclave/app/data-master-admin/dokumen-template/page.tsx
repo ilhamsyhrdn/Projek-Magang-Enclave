@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Sidebar from "@/app/components/Sidebar";
+import Sidebar from "@/app/components/sidebar-admin";
 import { Menu } from "lucide-react";
 
-export default function DivisiPage() {
+export default function DokumenTemplatePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
@@ -26,10 +26,10 @@ export default function DivisiPage() {
 
         <div className="px-6 lg:px-10 pb-10">
           <h1 className="font-['Poppins'] font-medium text-[#1e1e1e] text-[40px]">
-            Data Master - Divisi
+            Data Master - Dokumen Template
           </h1>
           <p className="font-['Poppins'] font-light text-black text-xl">
-            Halaman untuk mengelola data divisi
+            Halaman untuk mengelola dokumen template
           </p>
         </div>
       </div>

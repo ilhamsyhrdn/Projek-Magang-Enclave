@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Sidebar from "@/app/components/Sidebar";
+import Sidebar from "@/app/components/sidebar-admin";
 import { Menu } from "lucide-react";
 
 export default function DashboardPage() {

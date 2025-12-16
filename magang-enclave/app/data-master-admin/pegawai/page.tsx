@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Sidebar from "@/app/components/Sidebar";
+import Sidebar from "@/app/components/sidebar-admin";
 import { Menu } from "lucide-react";
 
 export default function PegawaiPage() {

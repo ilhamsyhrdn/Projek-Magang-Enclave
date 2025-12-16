@@ -1,20 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import Sidebar from "@/app/components/Sidebar";
+import SidebarUser from "@/app/components/sidebar-user";
 import { Menu } from "lucide-react";
 
-export default function KategoriPage() {
+export default function BerandaUserPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar
+      <SidebarUser
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
       <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-[269px]' : 'lg:ml-0'}`}>
+        {/* Header with Menu Button */}
         <div className="sticky top-0 z-30 bg-gray-50 py-4 px-6 lg:px-10">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -24,13 +25,16 @@ export default function KategoriPage() {
           </button>
         </div>
 
-        <div className="px-6 lg:px-10 pb-10">
-          <h1 className="font-['Poppins'] font-medium text-[#1e1e1e] text-[40px]">
-            Data Master - Kategori
-          </h1>
-          <p className="font-['Poppins'] font-light text-black text-xl">
-            Halaman untuk mengelola data kategori
-          </p>
+        {/* Main Content */}
+        <div className="flex items-center justify-center min-h-[calc(100vh-120px)] px-6">
+          <div className="text-center">
+            <h1 className="font-['Poppins'] font-semibold text-[#1e1e1e] text-4xl md:text-5xl lg:text-6xl mb-4">
+              Welcome back!
+            </h1>
+            <h2 className="font-['Poppins'] font-bold text-[#1e1e1e] text-3xl md:text-4xl lg:text-5xl">
+              {"{Super User}"}
+            </h2>
+          </div>
         </div>
       </div>
     </div>
