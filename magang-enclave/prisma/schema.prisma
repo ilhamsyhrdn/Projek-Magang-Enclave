@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["auth", "documents", "master", "system"]
+}
+
+enum DocType {
+  masuk
+  keluar
+  memo
+  notulensi
+
+  @@schema("documents")
+  @@map("doc_type_enum")
+}
+
+enum DocStatus {
+  draft
+  proses
+  selesai
+  arsip
+  deleted
+
+  @@schema("documents")
+  @@map("doc_status_enum")
+}
+
+enum DispositionStatus {
+  pending
+  approved
+  rejected
+  completed
+
+  @@schema("documents")
+  @@map("disposition_status_enum")
+}
+
+model Department {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(100)
+  description String?
+  divisions   Division[]
+
+  @@map("departments")
+  @@schema("auth")
+}
+
+model Division {
+  id            Int         @id @default(autoincrement())
+  name          String      @db.VarChar(100)
+  description   String?
+  department_id Int?
+  departments   Department? @relation(fields: [department_id], references: [id])
+  positions     Position[]
+
+  @@map("divisions")
+  @@schema("auth")
+}
+
+model Position {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100)
+  division_id Int?
+  description String?
+  divisions   Division? @relation(fields: [division_id], references: [id])
+  users       User[]
+
+  @@map("positions")
+  @@schema("auth")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(150)
+  email       String    @unique @db.VarChar(150)
+  password    String
+  role        String    @db.VarChar(50)
+  position_id Int?
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  positions      Position?        @relation(fields: [position_id], references: [id])
+  documents      documents[]
+  document_files document_files[]
+  history        document_history[]
+  notifications  notifications[]
+  dispositions_from dispositions[] @relation("dispositions_from_userTousers")
+  dispositions_to   dispositions[] @relation("dispositions_to_userTousers")
+
+  @@map("users")
+  @@schema("auth")
+}
+
+model dispositions {
+  id          Int               @id @default(autoincrement())
+  document_id Int?
+  from_user   Int?
+  to_user     Int?
+  note        String?
+  status      DispositionStatus @default(pending)
+  due_date    DateTime?         @db.Date
+  completed_at DateTime?        @db.Timestamp(6)
+  created_at  DateTime?         @default(now()) @db.Timestamp(6)
+
+  documents documents? @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  fromUser  User?      @relation("dispositions_from_userTousers", fields: [from_user], references: [id])
+  toUser    User?      @relation("dispositions_to_userTousers", fields: [to_user], references: [id])
+
+  @@schema("documents")
+}
+
+model document_files {
+  id          Int       @id @default(autoincrement())
+  document_id Int?
+  description String?
+  file_path   String
+  uploaded_by Int?
+  uploaded_at DateTime? @default(now()) @db.Timestamp(6)
+
+  documents documents? @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  users     User?      @relation(fields: [uploaded_by], references: [id])
+
+  @@schema("documents")
+}
+
+model document_history {
+  id          Int       @id @default(autoincrement())
+  document_id Int?
+  user_id     Int?
+  action      String    @db.VarChar(50)
+  detail      String?
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  documents documents? @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  users     User?      @relation(fields: [user_id], references: [id])
+
+  @@schema("documents")
+}
+
+model documents {
+  id                   Int        @id @default(autoincrement())
+  doc_type             DocType
+  number               String?    @db.VarChar(100)
+  title                String     @db.VarChar(200)
+  sender               String?    @db.VarChar(200)
+  receiver             String?    @db.VarChar(200)
+  sender_id            Int?
+  receiver_id          Int?
+  meeting_participants String?
+  meeting_points       String?
+  date_sent            DateTime?  @db.Date
+  category_id          Int?
+  created_by           Int?
+  status               DocStatus  @default(draft)
+  created_at           DateTime?  @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?  @default(now()) @db.Timestamp(6)
+
+  categories      categories?       @relation(fields: [category_id], references: [id])
+  creator         User?              @relation(fields: [created_by], references: [id])
+  files           document_files[]
+  history         document_history[]
+  dispositions    dispositions[]
+
+  @@unique([doc_type, number])
+  @@schema("documents")
+}
+
+model categories {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  doc_type    DocType
+  description String?
+  documents   documents[]
+  templates   templates[]
+
+  @@schema("master")
+}
+
+model templates {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100)
+  category_id Int?
+  description String?
+  file_path   String
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  categories categories? @relation(fields: [category_id], references: [id])
+
+  @@schema("master")
+}
+
+model notifications {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?
+  title      String?   @db.VarChar(200)
+  message    String?
+  is_read    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+
+  users User? @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@schema("system")
+}
