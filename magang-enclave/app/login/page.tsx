@@ -8,39 +8,37 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt:", { email, password });
-    // Navigate to admin dashboard
-    router.push("/beranda-admin");
+    
+    // Clear previous error
+    setError("");
+    
+    // Determine redirect based on email domain
+    if (email.endsWith("@superadmin.com")) {
+      router.push("/dashboard-superAdmin");
+    } else if (email.endsWith("@admin.com")) {
+      router.push("/beranda-admin");
+    } else if (email.endsWith("@user.com")) {
+      router.push("/beranda-user");
+    } else {
+      // If email doesn't match any domain, show error message
+      setError("Email atau Password yang dimasukan salah, silahkan coba lagi");
+    }
   };
 
   return (
-    <div className="bg-white relative w-full min-h-screen flex">
-      {/* Left side - Decorative background */}
-      <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 p-6">
-          <div className="relative w-full h-full rounded-3xl overflow-hidden">
+    <div className="bg-white relative w-full min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-6xl flex flex-col md:flex-row items-center gap-8 md:gap-16">
+        {/* Left side - Building Illustration */}
+        <div className="w-full md:w-1/2 flex items-center justify-center">
+          <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96">
             <Image
               src="/login-bg.png"
-              alt="Background"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Right side - Login Form */}
-      <div className="w-full md:w-1/2 flex flex-col">
-        {/* Logo - Top */}
-        <div className="w-full flex justify-center md:justify-end p-6 md:p-8">
-          <div className="relative w-32 md:w-48 lg:w-[237px] h-16 md:h-20 lg:h-[85px]">
-            <Image
-              src="/logo.png"
-              alt="Enclave Logo"
+              alt="Building"
               fill
               className="object-contain"
               priority
@@ -48,53 +46,71 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Login Form Container */}
-        <div className="flex-1 flex items-center justify-center px-6 md:px-12 lg:px-16 pb-12">
-          <div className="w-full max-w-[527px] space-y-6 md:space-y-8">
-            <div className="space-y-2 md:space-y-3">
-              <h1 className="font-semibold text-[#4180a9] text-2xl md:text-3xl lg:text-[36px]">
+        {/* Right side - Login Form */}
+        <div className="w-full md:w-1/2 max-w-md">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <h1 className="font-['Poppins'] font-semibold text-[#4180a9] text-3xl md:text-4xl">
                 Get Started
               </h1>
-              <p className="font-normal text-[#424141] text-base md:text-lg">
+              <p className="font-['Poppins'] font-normal text-[#424141] text-base md:text-lg">
                 Welcome to Enclave E-office
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8 lg:space-y-[69px]">
-              <div className="space-y-3 md:space-y-[14px]">
-                <label className="font-normal text-[#424141] text-base md:text-lg block">
-                  Email <span className="text-[#f60707]">*</span>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="font-['Poppins'] font-normal text-[#424141] text-base block">
+                  Email <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-14 md:h-16 lg:h-[71px] px-4 md:px-6 border border-black rounded-[20px] text-base focus:outline-none focus:border-[#4180a9] focus:ring-2 focus:ring-[#4180a9]/20"
-                  placeholder="Enter your email"
+                  className="w-full h-14 px-4 border border-gray-300 rounded-[10px] text-base font-['Poppins'] focus:outline-none focus:border-[#4180a9] focus:ring-2 focus:ring-[#4180a9]/20"
+                  placeholder=""
                   required
                 />
               </div>
 
-              <div className="space-y-3 md:space-y-[14px]">
-                <label className="font-normal text-[#424141] text-base md:text-lg block">
-                  Password <span className="text-[#f60707]">*</span>
+              <div className="space-y-2">
+                <label className="font-['Poppins'] font-normal text-[#424141] text-base block">
+                  Password <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-14 md:h-16 lg:h-[71px] px-4 md:px-6 border border-black rounded-[20px] text-base focus:outline-none focus:border-[#4180a9] focus:ring-2 focus:ring-[#4180a9]/20"
-                  placeholder="Enter your password"
+                  className="w-full h-14 px-4 border border-gray-300 rounded-[10px] text-base font-['Poppins'] focus:outline-none focus:border-[#4180a9] focus:ring-2 focus:ring-[#4180a9]/20"
+                  placeholder=""
                   required
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full h-12 md:h-14 lg:h-[56px] bg-[#4180a9] text-[#f6f7f8] rounded-[30px] font-semibold text-lg md:text-xl lg:text-[24px] hover:bg-[#356890] transition-colors"
+                className="w-full h-14 bg-[#4180a9] text-white rounded-[30px] font-['Poppins'] font-semibold text-lg hover:bg-[#356890] transition-colors"
               >
                 Sign In
               </button>
+
+              {/* Lupa Password Link */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => router.push('/lupa-password')}
+                  className="font-['Poppins'] text-[#424141] text-sm hover:text-[#4180a9] transition-colors"
+                >
+                  Lupa password?
+                </button>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <p className="text-red-600 text-sm text-center font-['Poppins']">
+                  {error}
+                </p>
+              )}
             </form>
           </div>
         </div>

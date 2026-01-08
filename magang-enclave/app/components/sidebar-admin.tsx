@@ -13,18 +13,34 @@ import {
   LogOut 
 } from "lucide-react";
 
+interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  date: string;
+  time: string;
+  isRead: boolean;
+  status: string;
+}
+
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+  notifications?: Notification[];
+  onNotificationClick?: () => void;
 }
 
 export default function Sidebar({
   isOpen,
   onToggle,
+  notifications = [],
+  onNotificationClick,
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isDataMasterOpen, setIsDataMasterOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const dataSubMenu = [
     { id: "divisi", label: "Divisi", path: "/data-master-admin/divisi" },
@@ -33,6 +49,7 @@ export default function Sidebar({
     { id: "pegawai", label: "Pegawai", path: "/data-master-admin/pegawai" },
     { id: "kategori", label: "Kategori", path: "/data-master-admin/kategori" },
     { id: "dokumen-template", label: "Dokumen Template", path: "/data-master-admin/dokumen-template" },
+    { id: "struktur-jabatan", label: "Struktur Jabatan", path: "/data-master-admin/struktur-jabatan" },
   ];
 
   const handleLogout = () => {
@@ -103,10 +120,75 @@ export default function Sidebar({
               </p>
             </div>
             <div className="relative">
-              <Bell size={17} className="text-[#1E1E1E]" />
-              <div className="absolute -top-1 left-[11px] bg-[#ba0808] text-white text-[6px] px-1 rounded-full min-w-[12px] h-[7px] flex items-center justify-center font-['Poppins'] font-medium">
-                99+
-              </div>
+              <button
+                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                className="relative hover:opacity-70 transition-opacity"
+              >
+                <Bell size={17} className="text-[#1E1E1E]" />
+                {notifications.filter(n => !n.isRead).length > 0 && (
+                  <div className="absolute -top-1 left-[11px] bg-[#ba0808] text-white text-[6px] px-1 rounded-full min-w-[12px] h-[7px] flex items-center justify-center font-['Poppins'] font-medium">
+                    {notifications.filter(n => !n.isRead).length}
+                  </div>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {isNotificationOpen && (
+                <div className="absolute left-0 top-12 w-80 bg-white rounded-lg shadow-2xl border border-gray-200 max-h-96 overflow-y-auto z-[60]">
+                  <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+                    <h3 className="font-['Poppins'] font-semibold text-lg text-gray-800">
+                      Notifikasi
+                    </h3>
+                    <button
+                      onClick={() => setIsNotificationOpen(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <div className="divide-y divide-gray-100">
+                    {notifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                          !notif.isRead ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <h4 className="font-['Poppins'] font-medium text-sm text-gray-800">
+                            {notif.title}
+                          </h4>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              notif.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : notif.status === 'approved'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-blue-100 text-blue-700'
+                            }`}
+                          >
+                            {notif.status === 'pending' && 'Menunggu'}
+                            {notif.status === 'approved' && 'Disetujui'}
+                            {notif.status === 'completed' && 'Selesai'}
+                          </span>
+                        </div>
+                        <p className="font-['Poppins'] text-xs text-gray-600 mb-2">
+                          {notif.message}
+                        </p>
+                        <div className="flex justify-between items-center">
+                          <span className="font-['Poppins'] text-xs text-gray-500">
+                            {notif.date}
+                          </span>
+                          <span className="font-['Poppins'] text-xs text-gray-500">
+                            {notif.time}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
