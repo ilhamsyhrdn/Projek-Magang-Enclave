@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import SidebarUser from "@/app/components/sidebar-user";
-import { Menu, Search, Filter, Plus, FileText, Download, Archive, History, X, Send } from "lucide-react";
+import { useState } from "react";
+import SidebarApprover from "@/app/components/sidebar-approver";
+import { Menu, Search, Filter, FileText, Download, History, X, Check, Clock, Archive } from "lucide-react";
 import Image from "next/image";
 
 interface Surat {
@@ -22,18 +22,17 @@ interface Surat {
   isRead: boolean;
 }
 
-export default function SuratKeluarUserPage() {
+export default function SuratMasukApproverPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSurat, setSelectedSurat] = useState<Surat | null>(null);
   const [isLogHistoryOpen, setIsLogHistoryOpen] = useState(false);
-  const [suratItems, setSuratItems] = useState<Surat[]>([]);
 
   const logHistory = [
     { id: 1, tanggal: "1 Januari 2025 | 19:00", aksi: "Surat ditolak oleh Chandra wibawa", detail: "---" },
     { id: 2, tanggal: "30 Desember 2025 | 13:00", aksi: "Dilakukan revisi oleh Budiono Siregar", detail: "Surat telah direvisi" },
     { id: 3, tanggal: "28 Desember 2025 | 12:00", aksi: "Diminta revisi oleh Chandra Wibawa", detail: "Tolong revisi bagian isinya ya" },
-    { id: 4, tanggal: "25 Desember 2025 | 10:00", aksi: "Surat telah Dibuat oleh Budiono Siregar", detail: "Tolong revisi bagian isinya ya" },
+    { id: 4, tanggal: "25 Desember 2025 | 10:00", aksi: "Surat telah Dibuat oleh Budiono Siregar", detail: "Surat telah dibuat" },
   ];
 
   const suratList: Surat[] = [
@@ -42,9 +41,9 @@ export default function SuratKeluarUserPage() {
       title: "Pt Lorem Ipsum",
       time: "13:00 Pm",
       category: "Surat Keluar - POP",
-      status: "Dalam proses",
+      status: "Dalam Proses",
       statusColor: "#F59E0B",
-      statusBadge: "High Priority",
+      statusBadge: "Dalam Proses",
       noSurat: "01/C111/107/11/2025",
       tanggalSurat: "03/11/2025",
       diterimaTanggal: "06/12/2025",
@@ -135,10 +134,7 @@ export default function SuratKeluarUserPage() {
     },
   ];
 
-  // Initialize suratItems with suratList on component mount
-  useEffect(() => {
-    setSuratItems(suratList);
-  }, []);
+  const [suratItems, setSuratItems] = useState<Surat[]>(suratList);
 
   const handleSuratClick = (surat: Surat) => {
     // Mark the item as read when clicked
@@ -159,19 +155,54 @@ export default function SuratKeluarUserPage() {
     }
   };
 
-  const handleCloseDetail = () => {
-    setSelectedSurat(null);
+  const handleApprove = () => {
+    if (selectedSurat) {
+      alert(`Surat "${selectedSurat.title}" telah disetujui`);
+      setSuratItems(prevItems =>
+        prevItems.map(item =>
+          item.id === selectedSurat.id ? { ...item, status: "Selesai", statusColor: "#10B981", statusBadge: "Selesai" } : item
+        )
+      );
+      setSelectedSurat(null);
+    }
+  };
+
+  const handlePending = () => {
+    if (selectedSurat) {
+      alert(`Surat "${selectedSurat.title}" ditandai pending`);
+      setSuratItems(prevItems =>
+        prevItems.map(item =>
+          item.id === selectedSurat.id ? { ...item, status: "Dalam Proses", statusColor: "#F59E0B", statusBadge: "Dalam Proses" } : item
+        )
+      );
+      setSelectedSurat(null);
+    }
+  };
+
+  const handleReject = () => {
+    if (selectedSurat) {
+      const reason = prompt("Alasan penolakan:");
+      if (reason) {
+        alert(`Surat "${selectedSurat.title}" ditolak dengan alasan: ${reason}`);
+        setSuratItems(prevItems =>
+          prevItems.map(item =>
+            item.id === selectedSurat.id ? { ...item, status: "Ditolak", statusColor: "#DC2626", statusBadge: "Ditolak" } : item
+          )
+        );
+        setSelectedSurat(null);
+      }
+    }
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <SidebarUser
+      <SidebarApprover
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
       <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-[269px]' : 'lg:ml-0'}`}>
-        {/* Header with Menu Button */}
+        {/* Header */}
         <div className="bg-gray-50 py-4 px-6 lg:px-10">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -202,9 +233,6 @@ export default function SuratKeluarUserPage() {
                 </div>
                 <button className="p-3 border border-gray-300 rounded-[12px] hover:bg-gray-50 transition-colors flex-shrink-0">
                   <Filter size={20} className="text-gray-600" />
-                </button>
-                <button className="p-3 bg-[#4180a9] text-white rounded-[12px] hover:bg-[#356890] transition-colors flex-shrink-0">
-                  <Plus size={20} />
                 </button>
               </div>
 
@@ -249,143 +277,147 @@ export default function SuratKeluarUserPage() {
             <div className="bg-white rounded-[20px] shadow-sm p-6 lg:p-8 h-full overflow-y-auto">
               {selectedSurat ? (
                 <div>
-                  {/* Header with Close Button */}
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-['Poppins'] font-semibold text-xl text-[#1e1e1e]">
-                      Detail Surat
-                    </h2>
-                    <button
-                      onClick={handleCloseDetail}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
+                  {/* Header */}
+                  <h2 className="font-['Poppins'] font-semibold text-xl text-[#1e1e1e] mb-6">
+                    Detail Surat
+                  </h2>
 
                   {/* Detail Information */}
                   <div className="bg-white border border-gray-200 rounded-[15px] p-6 mb-6">
                     <div className="grid grid-cols-3 gap-x-6 gap-y-4">
-                      <div>
-                        <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
-                          No.Surat
-                        </p>
-                        <p className="font-['Poppins'] text-sm text-gray-600">
-                          {selectedSurat.noSurat}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
-                          Instansi Penerima
-                        </p>
-                        <p className="font-['Poppins'] text-sm text-gray-600">
-                          {selectedSurat.instansiPenerima}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
-                          Pengaju Surat Keluar
-                        </p>
-                        <p className="font-['Poppins'] text-sm text-gray-600">
-                          {selectedSurat.penggunaSuratKeluar}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
-                          Tanggal Surat
-                        </p>
-                        <p className="font-['Poppins'] text-sm text-gray-600">
-                          {selectedSurat.tanggalSurat}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
-                          Diterima Tanggal
-                        </p>
-                        <p className="font-['Poppins'] text-sm text-gray-600">
-                          {selectedSurat.diterimaTanggal}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
-                          Status
-                        </p>
-                        <span
-                          className="inline-block px-3 py-1 rounded-full font-['Poppins'] text-xs font-medium"
-                          style={{
-                            backgroundColor: selectedSurat.statusColor + '20',
-                            color: selectedSurat.statusColor
-                          }}
-                        >
-                          {selectedSurat.status}
-                        </span>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
-                          Kategori
-                        </p>
-                        <p className="font-['Poppins'] text-sm text-gray-600">
-                          {selectedSurat.category}
-                        </p>
-                      </div>
-                      <div className="col-span-3">
-                        <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
-                          Perihal
-                        </p>
-                        <p className="font-['Poppins'] text-sm text-gray-600">
-                          {selectedSurat.perihal}
-                        </p>
-                      </div>
+                    <div>
+                      <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
+                        No.Surat
+                      </p>
+                      <p className="font-['Poppins'] text-sm text-gray-600">
+                        {selectedSurat.noSurat}
+                      </p>
                     </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
-                      <Archive size={18} />
-                      Arsip Surat Keluar
-                    </button>
-                    <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
-                      <Download size={18} />
-                      Unduh Surat
-                    </button>
-                    <button 
-                      onClick={() => setIsLogHistoryOpen(true)}
-                      className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors"
-                    >
-                      <History size={18} />
-                      Log History
-                    </button>
-                    <div className="ml-auto flex items-center gap-2">
-                      <button className="p-3 bg-[#10B981] text-white rounded-full hover:bg-[#059669] transition-colors shadow-md">
-                        <Download size={20} />
-                      </button>
-                      <button className="p-3 bg-[#10B981] text-white rounded-full hover:bg-[#059669] transition-colors shadow-md">
-                        <Send size={20} />
-                      </button>
+                    <div>
+                      <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
+                        Instansi Penerima
+                      </p>
+                      <p className="font-['Poppins'] text-sm text-gray-600">
+                        {selectedSurat.instansiPenerima}
+                      </p>
                     </div>
-                  </div>
-
-                  {/* Document Preview */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-[15px] p-8 flex flex-col items-center justify-center min-h-[500px] bg-gray-50">
-                    <div className="text-center">
-                      <h3 className="font-['Poppins'] font-semibold text-2xl text-[#1e1e1e] mb-4">
-                        {selectedSurat.title}
-                      </h3>
-                      <p className="font-['Poppins'] text-lg text-[#1e1e1e] mb-8">
+                    <div>
+                      <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
+                        Pengaju Surat Keluar
+                      </p>
+                      <p className="font-['Poppins'] text-sm text-gray-600">
+                        {selectedSurat.penggunaSuratKeluar}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
+                        Tanggal Surat
+                      </p>
+                      <p className="font-['Poppins'] text-sm text-gray-600">
+                        {selectedSurat.tanggalSurat}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
+                        Diterima Tanggal
+                      </p>
+                      <p className="font-['Poppins'] text-sm text-gray-600">
+                        {selectedSurat.diterimaTanggal}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
+                        Status
+                      </p>
+                      <span
+                        className="inline-block px-3 py-1 rounded-full font-['Poppins'] text-xs font-medium"
+                        style={{ backgroundColor: selectedSurat.statusColor + '20', color: selectedSurat.statusColor }}
+                      >
+                        {selectedSurat.statusBadge}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
+                        Kategori
+                      </p>
+                      <p className="font-['Poppins'] text-sm text-gray-600">
+                        {selectedSurat.category}
+                      </p>
+                    </div>
+                    <div className="col-span-3">
+                      <p className="font-['Poppins'] text-sm font-semibold text-[#1e1e1e] mb-1">
+                        Perihal
+                      </p>
+                      <p className="font-['Poppins'] text-sm text-gray-600">
                         {selectedSurat.perihal}
                       </p>
-                      <div className="w-80 h-80 mx-auto relative">
-                        <Image
-                          src="/logo-enclave.png"
-                          alt="Document Preview"
-                          width={320}
-                          height={320}
-                          className="object-contain opacity-80"
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-3 mb-6">
+                  <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
+                    <Archive size={18} />
+                    Arsip Surat Masuk
+                  </button>
+                  <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
+                    <Download size={18} />
+                    Unduh Surat
+                  </button>
+                  <button
+                    onClick={() => setIsLogHistoryOpen(true)}
+                    className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors"
+                  >
+                    <History size={18} />
+                    Log History
+                  </button>
+                  <div className="ml-auto flex items-center gap-2">
+                    <button
+                      onClick={handleApprove}
+                      className="p-3 bg-[#10B981] text-white rounded-full hover:bg-[#059669] transition-colors shadow-md"
+                      title="Setujui"
+                    >
+                      <Check size={20} strokeWidth={2.5} />
+                    </button>
+                    <button
+                      onClick={handlePending}
+                      className="p-3 bg-[#F59E0B] text-white rounded-full hover:bg-[#D97706] transition-colors shadow-md"
+                      title="Pending"
+                    >
+                      <Clock size={20} strokeWidth={2.5} />
+                    </button>
+                    <button
+                      onClick={handleReject}
+                      className="p-3 bg-[#DC2626] text-white rounded-full hover:bg-[#B91C1C] transition-colors shadow-md"
+                      title="Tolak"
+                    >
+                      <X size={20} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Document Preview */}
+                <div className="border-2 border-dashed border-gray-300 rounded-[15px] p-8 flex flex-col items-center justify-center min-h-[500px] bg-gray-50">
+                  <div className="text-center">
+                    <h3 className="font-['Poppins'] font-semibold text-2xl text-[#1e1e1e] mb-4">
+                      {selectedSurat.title}
+                    </h3>
+                    <p className="font-['Poppins'] text-lg text-[#1e1e1e] mb-8">
+                      {selectedSurat.perihal}
+                    </p>
+                    <div className="w-80 h-80 mx-auto relative">
+                      <Image
+                        src="/logo-enclave.png"
+                        alt="Document Preview"
+                        width={320}
+                        height={320}
+                        className="object-contain opacity-80"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full">
                   <div className="bg-[#4180a9] rounded-[20px] p-8 text-white text-center max-w-xs">
@@ -405,46 +437,24 @@ export default function SuratKeluarUserPage() {
 
       {/* Log History Modal */}
       {isLogHistoryOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-[70] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[15px] w-full max-w-[550px] max-h-[85vh] overflow-hidden shadow-2xl">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
-              <h2 className="font-['Poppins'] font-semibold text-[22px] text-[#4180a9]">
-                Log History
-              </h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="font-['Poppins'] font-semibold text-xl">Log History</h2>
               <button
                 onClick={() => setIsLogHistoryOpen(false)}
-                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-lg"
               >
-                <X size={24} className="text-gray-500" />
+                <X size={20} />
               </button>
             </div>
-
-            {/* Modal Content */}
-            <div className="overflow-y-auto max-h-[calc(85vh-76px)] p-6">
-              <div className="space-y-6">
-                {logHistory.map((log, index) => (
-                  <div key={log.id} className="flex gap-4 relative">
-                    {/* Timeline */}
-                    <div className="flex flex-col items-center">
-                      <div className="w-4 h-4 rounded-full border-4 border-gray-400 bg-white flex-shrink-0 mt-1"></div>
-                      {index < logHistory.length - 1 && (
-                        <div className="w-0.5 h-full bg-gray-300 mt-1"></div>
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 pb-2">
-                      <p className="font-['Poppins'] text-sm font-medium text-[#1e1e1e] mb-1">
-                        {log.tanggal}
-                      </p>
-                      <p className="font-['Poppins'] text-[15px] font-semibold text-[#1e1e1e] mb-1">
-                        {log.aksi}
-                      </p>
-                      <p className="font-['Poppins'] text-sm text-gray-600">
-                        {log.detail}
-                      </p>
-                    </div>
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <div className="space-y-4">
+                {logHistory.map((log) => (
+                  <div key={log.id} className="border-l-4 border-[#277ba7] pl-4 py-2">
+                    <p className="text-sm text-gray-500 font-['Poppins']">{log.tanggal}</p>
+                    <p className="font-['Poppins'] font-medium text-black">{log.aksi}</p>
+                    <p className="text-sm text-gray-600 font-['Poppins']">{log.detail}</p>
                   </div>
                 ))}
               </div>

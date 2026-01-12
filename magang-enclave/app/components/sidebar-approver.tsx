@@ -27,19 +27,19 @@ interface Notification {
   status: string;
 }
 
-interface SidebarUserProps {
+interface SidebarApproverProps {
   isOpen: boolean;
   onToggle: () => void;
   notifications?: Notification[];
   onNotificationClick?: () => void;
 }
 
-export default function SidebarUser({
+export default function SidebarApprover({
   isOpen,
   onToggle,
   notifications = [],
   onNotificationClick,
-}: SidebarUserProps) {
+}: SidebarApproverProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -105,10 +105,10 @@ export default function SidebarUser({
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-['Poppins'] font-medium text-black text-[15px] truncate">
-                Super User
+                Approver
               </p>
               <p className="font-['Poppins'] font-light text-black text-[8px]">
-                sekuruna
+                Approval Manager
               </p>
             </div>
             <button
@@ -127,13 +127,13 @@ export default function SidebarUser({
         <nav className="px-4 space-y-1 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {/* Beranda */}
           <Link
-            href="/beranda-user"
+            href="/beranda-approver"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/beranda-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/beranda-approver" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <LayoutDashboard size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -144,13 +144,13 @@ export default function SidebarUser({
 
           {/* Surat Masuk */}
           <Link
-            href="/suratMasuk-user"
+            href="/suratMasuk-approver"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/suratMasuk-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/suratMasuk-approver" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Mail size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -161,13 +161,13 @@ export default function SidebarUser({
 
           {/* Surat Keluar */}
           <Link
-            href="/suratKeluar-user"
+            href="/suratKeluar-approver"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/suratKeluar-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/suratKeluar-approver" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Send size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -178,13 +178,13 @@ export default function SidebarUser({
 
           {/* Memo */}
           <Link
-            href="/memo-user"
+            href="/memo-approver"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/memo-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/memo-approver" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <FileText size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -195,13 +195,13 @@ export default function SidebarUser({
 
           {/* Notulensi */}
           <Link
-            href="/notulensi-user"
+            href="/notulensi-approver"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/notulensi-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/notulensi-approver" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Clipboard size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -212,13 +212,13 @@ export default function SidebarUser({
 
           {/* Daftar Surat */}
           <Link
-            href="/daftar-surat-user"
+            href="/daftar-surat-approver"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/daftar-surat-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/daftar-surat-approver" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <List size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -229,13 +229,13 @@ export default function SidebarUser({
 
           {/* Arsip */}
           <Link
-            href="/arsip-user"
+            href="/arsip-approver"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/arsip-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/arsip-approver" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Archive size={20} className="text-[#1E1E1E] flex-shrink-0" />

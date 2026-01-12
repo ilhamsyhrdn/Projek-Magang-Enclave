@@ -60,9 +60,9 @@ export default function SuratMasukUserPage() {
       title: "Pt Lorem Ipsum",
       time: "13:00 Pm",
       category: "Surat Keluar - POP",
-      status: "Dalam proses",
+      status: "Dalam Proses",
       statusColor: "#F59E0B",
-      statusBadge: "High Priority",
+      statusBadge: "Dalam Proses",
       noSurat: "01/C111/107/11/2025",
       tanggalSurat: "03/11/2025",
       diterimaTanggal: "06/12/2025",
@@ -76,9 +76,9 @@ export default function SuratMasukUserPage() {
       title: "Pt Lorem Ipsum",
       time: "13:00 Pm",
       category: "Surat Keluar - POP",
-      status: "Menunggu",
-      statusColor: "#6B7280",
-      statusBadge: "Medium Priority",
+      status: "Dalam Proses",
+      statusColor: "#F59E0B",
+      statusBadge: "Dalam Proses",
       noSurat: "02/C111/107/11/2025",
       tanggalSurat: "03/11/2025",
       diterimaTanggal: "06/12/2025",
@@ -92,9 +92,9 @@ export default function SuratMasukUserPage() {
       title: "Pt Lorem Ipsum",
       time: "13:00 Pm",
       category: "Surat Keluar - POP",
-      status: "Dalam proses",
+      status: "Dalam Proses",
       statusColor: "#F59E0B",
-      statusBadge: "Low Priority",
+      statusBadge: "Dalam Proses",
       noSurat: "03/C111/107/11/2025",
       tanggalSurat: "03/11/2025",
       diterimaTanggal: "06/12/2025",
@@ -232,27 +232,7 @@ export default function SuratMasukUserPage() {
               {/* Surat List */}
               <div className="space-y-4 overflow-y-auto flex-1 pr-2 pb-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
                 {suratItems.map((surat) => {
-                  const getPriorityColor = (badge: string) => {
-                    if (badge === 'High Priority') return '#DC2626';
-                    if (badge === 'Medium Priority') return '#F59E0B';
-                    if (badge === 'Low Priority') return '#10B981';
-                    return '#10B981'; // Selesai - green
-                  };
-
-                  const getStatusBgColor = (status: string) => {
-                    if (status === 'Dalam proses') return '#FEF3C7';
-                    if (status === 'Menunggu') return '#E5E7EB';
-                    return '#10B981'; // Selesai - green
-                  };
-
-                  const getStatusTextColor = (status: string) => {
-                    if (status === 'Dalam proses') return '#92400E';
-                    if (status === 'Menunggu') return '#374151';
-                    return '#FFFFFF'; // Selesai - white
-                  };
-
-                  const priorityColor = getPriorityColor(surat.statusBadge);
-                  const leftBorderColor = !surat.isRead ? '#3B82F6' : 'transparent'; // Blue for unread, transparent for read
+                  const leftBorderColor = !surat.isRead ? '#3B82F6' : 'transparent';
 
                   return (
                     <div
@@ -262,35 +242,22 @@ export default function SuratMasukUserPage() {
                       style={{ borderLeftColor: leftBorderColor }}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-['Poppins'] font-semibold text-[#1e1e1e] text-base">
+                        <h3 className="font-['Poppins'] font-semibold text-[#1e1e1e] text-sm">
                           {surat.title}
                         </h3>
-                        <div className="flex flex-col items-end gap-1">
-                          <span className="font-['Poppins'] text-xs text-gray-500">
-                            {surat.time}
-                          </span>
-                          {surat.statusBadge !== 'Selesai' && (
-                            <span
-                              className="px-2.5 py-1 rounded-md font-['Poppins'] text-xs font-medium text-white whitespace-nowrap"
-                              style={{ backgroundColor: priorityColor }}
-                            >
-                              {surat.statusBadge}
-                            </span>
-                          )}
-                        </div>
+                        <span className="font-['Poppins'] text-xs text-gray-500">
+                          {surat.time}
+                        </span>
                       </div>
-                      <p className="font-['Poppins'] text-sm text-gray-600 mb-3">
+                      <p className="font-['Poppins'] text-xs text-gray-600 mb-2">
                         {surat.category}
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-2">
                         <span
                           className="px-3 py-1 rounded-full font-['Poppins'] text-xs font-medium"
-                          style={{ 
-                            backgroundColor: getStatusBgColor(surat.status),
-                            color: getStatusTextColor(surat.status)
-                          }}
+                          style={{ backgroundColor: surat.statusColor + '20', color: surat.statusColor }}
                         >
-                          {surat.status}
+                          {surat.statusBadge}
                         </span>
                       </div>
                     </div>
@@ -365,12 +332,9 @@ export default function SuratMasukUserPage() {
                         </p>
                         <span
                           className="inline-block px-3 py-1 rounded-full font-['Poppins'] text-xs font-medium"
-                          style={{ 
-                            backgroundColor: selectedSurat.status === 'Selesai' ? selectedSurat.statusColor : selectedSurat.statusColor === '#6B7280' ? '#E5E7EB' : '#FEF3C7',
-                            color: selectedSurat.status === 'Selesai' ? '#FFFFFF' : selectedSurat.statusColor === '#6B7280' ? '#374151' : '#92400E'
-                          }}
+                          style={{ backgroundColor: selectedSurat.statusColor + '20', color: selectedSurat.statusColor }}
                         >
-                          {selectedSurat.status}
+                          {selectedSurat.statusBadge}
                         </span>
                       </div>
                       <div className="col-span-2">
@@ -395,8 +359,8 @@ export default function SuratMasukUserPage() {
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3 mb-6">
                     <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
-                      <FileText size={18} />
-                      Notes Surat
+                      <Archive size={18} />
+                      Arsip Surat Masuk
                     </button>
                     <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
                       <Download size={18} />
@@ -423,10 +387,10 @@ export default function SuratMasukUserPage() {
                   <div className="border-2 border-dashed border-gray-300 rounded-[15px] p-8 flex flex-col items-center justify-center min-h-[500px] bg-gray-50">
                     <div className="text-center">
                       <h3 className="font-['Poppins'] font-semibold text-2xl text-[#1e1e1e] mb-4">
-                        Timeline Pengerjaan Proyek Magang
+                        {selectedSurat.title}
                       </h3>
                       <p className="font-['Poppins'] text-lg text-[#1e1e1e] mb-8">
-                        Duplikasi Aplikasi Monitoring Dokumen
+                        {selectedSurat.perihal}
                       </p>
                       <div className="w-80 h-80 mx-auto relative">
                         <Image

@@ -37,6 +37,13 @@ export default function DashboardSuperAdmin() {
       namaPerusahaan: "PT. Angin Ribut",
       status: false,
     },
+    {
+      id: 4,
+      email: "approver@user.com",
+      tanggalDibuat: "12 Januari 2026",
+      namaPerusahaan: "PT. Angin Ribut",
+      status: true,
+    },
   ]);
 
   const [formData, setFormData] = useState({

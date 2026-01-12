@@ -22,6 +22,9 @@ export default function LoginPage() {
       router.push("/dashboard-superAdmin");
     } else if (email.endsWith("@admin.com")) {
       router.push("/beranda-admin");
+    } else if (email === "approver@user.com") {
+      // Special case for approver
+      router.push("/beranda-approver");
     } else if (email.endsWith("@user.com")) {
       router.push("/beranda-user");
     } else {

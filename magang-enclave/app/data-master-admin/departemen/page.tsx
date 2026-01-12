@@ -156,13 +156,13 @@ export default function DepartemenPage() {
                       </td>
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-4 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <button 
+                          <button
                             onClick={() => handleEdit(index)}
                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           >
                             <Pencil size={18} className="text-orange-500" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleDelete(index)}
                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           >
@@ -172,11 +172,11 @@ export default function DepartemenPage() {
                       </td>
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-4 text-center">
                         <label className="relative inline-flex items-center cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={row.status} 
+                          <input
+                            type="checkbox"
+                            checked={row.status}
                             onChange={() => handleToggleStatus(index)}
-                            className="sr-only peer" 
+                            className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#56F2A7]"></div>
                         </label>

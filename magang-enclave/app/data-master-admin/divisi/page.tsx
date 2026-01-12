@@ -154,13 +154,13 @@ export default function DivisiPage() {
                       </td>
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-4 text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <button 
+                          <button
                             onClick={() => handleEdit(index)}
                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           >
                             <Pencil size={18} className="text-orange-500" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleDelete(index)}
                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           >
