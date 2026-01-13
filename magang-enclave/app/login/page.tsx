@@ -3,33 +3,72 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // useEffect(() => {
+  //   const checkLogin = async () => {
+  //     const res = await fetch('/api/auth/me', {
+  //       credentials: 'include',
+  //     });
+
+  //     if (res.ok) {
+  //       const data = await res.json();
+
+  //       if (data.user.role === 'superadmin') {
+  //         router.replace('/dashboard-superAdmin');
+  //       } else if (data.user.role === 'president') {
+  //         router.replace('/beranda-approver');
+  //       } else if (data.user.role === 'admin') {
+  //         router.replace('/beranda-admin');
+  //       } else {
+  //         router.replace('/beranda-user');
+  //       }
+  //     }
+  //   };
+
+  //   checkLogin();
+  // }, [router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Clear previous error
     setError("");
+    setIsLoading(true);
     
-    // Determine redirect based on email domain
-    if (email.endsWith("@superadmin.com")) {
-      router.push("/dashboard-superAdmin");
-    } else if (email.endsWith("@admin.com")) {
-      router.push("/beranda-admin");
-    } else if (email === "approver@user.com") {
-      // Special case for approver
-      router.push("/beranda-approver");
-    } else if (email.endsWith("@user.com")) {
-      router.push("/beranda-user");
-    } else {
-      // If email doesn't match any domain, show error message
-      setError("Email atau Password yang dimasukan salah, silahkan coba lagi");
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Tampilkan error dari server
+        setError(data.message || 'Email atau Password yang dimasukan salah, silahkan coba lagi');
+        setIsLoading(false);
+        return;
+      }
+
+      // Login berhasil, redirect sesuai role
+      if (data.success && data.redirectTo) {
+        router.push(data.redirectTo);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Terjadi kesalahan koneksi, silahkan coba lagi');
+      setIsLoading(false);
     }
   };
 
@@ -73,6 +112,7 @@ export default function LoginPage() {
                   className="w-full h-14 px-4 border border-gray-300 rounded-[10px] text-base font-['Poppins'] focus:outline-none focus:border-[#4180a9] focus:ring-2 focus:ring-[#4180a9]/20"
                   placeholder=""
                   required
+                  disabled={isLoading}
                 />
               </div>
 
@@ -87,14 +127,16 @@ export default function LoginPage() {
                   className="w-full h-14 px-4 border border-gray-300 rounded-[10px] text-base font-['Poppins'] focus:outline-none focus:border-[#4180a9] focus:ring-2 focus:ring-[#4180a9]/20"
                   placeholder=""
                   required
+                  disabled={isLoading}
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full h-14 bg-[#4180a9] text-white rounded-[30px] font-['Poppins'] font-semibold text-lg hover:bg-[#356890] transition-colors"
+                disabled={isLoading}
+                className="w-full h-14 bg-[#4180a9] text-white rounded-[30px] font-['Poppins'] font-semibold text-lg hover:bg-[#356890] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign In
+                {isLoading ? 'Loading...' : 'Sign In'}
               </button>
 
               {/* Lupa Password Link */}
@@ -103,6 +145,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => router.push('/lupa-password')}
                   className="font-['Poppins'] text-[#424141] text-sm hover:text-[#4180a9] transition-colors"
+                  disabled={isLoading}
                 >
                   Lupa password?
                 </button>
@@ -110,9 +153,11 @@ export default function LoginPage() {
 
               {/* Error Message */}
               {error && (
-                <p className="text-red-600 text-sm text-center font-['Poppins']">
-                  {error}
-                </p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-600 text-sm text-center font-['Poppins']">
+                    {error}
+                  </p>
+                </div>
               )}
             </form>
           </div>
