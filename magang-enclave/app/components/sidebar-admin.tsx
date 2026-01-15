@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from '@/lib/auth-context';
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, Bell, X } from "lucide-react";
+import { ChevronDown, Bell, X, User } from "lucide-react";
 import { 
   LayoutDashboard, 
   Mail, 
@@ -41,19 +42,32 @@ export default function Sidebar({
   const router = useRouter();
   const [isDataMasterOpen, setIsDataMasterOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [imageError, setImageError] = useState({
+    logo: false,
+    avatar: false
+  });
+
+  const { user, isLoading } = useAuth();
 
   const dataSubMenu = [
-    { id: "divisi", label: "Divisi", path: "/data-master-admin/divisi" },
-    { id: "departemen", label: "Departemen", path: "/data-master-admin/departemen" },
-    { id: "jabatan", label: "Jabatan/Posisi", path: "/data-master-admin/jabatan" },
-    { id: "pegawai", label: "Pegawai", path: "/data-master-admin/pegawai" },
-    { id: "kategori", label: "Kategori", path: "/data-master-admin/kategori" },
-    { id: "dokumen-template", label: "Dokumen Template", path: "/data-master-admin/dokumen-template" },
-    { id: "struktur-jabatan", label: "Struktur Jabatan", path: "/data-master-admin/struktur-jabatan" },
+    { id: "divisi", label: "Divisi", path: "/admin/data-master/divisi" },
+    { id: "departemen", label: "Departemen", path: "/admin/data-master/departemen" },
+    { id: "jabatan", label: "Jabatan/Posisi", path: "/admin/data-master/jabatan" },
+    { id: "pegawai", label: "Pegawai", path: "/admin/data-master/pegawai" },
+    { id: "kategori", label: "Kategori", path: "/admin/data-master/kategori" },
+    { id: "dokumen-template", label: "Dokumen Template", path: "/admin/data-master/dokumen-template" },
+    { id: "struktur-jabatan", label: "Struktur Jabatan", path: "/admin/data-master/struktur-jabatan" },
   ];
 
-  const handleLogout = () => {
-    router.push("/");
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
+  
+  const formatRole = (role: string) => {
+    if (!role) return '';
+    return role.charAt(0).toUpperCase() + role.slice(1);
   };
 
   return (
@@ -89,35 +103,64 @@ export default function Sidebar({
         {/* Logo */}
         <div className="px-6 pt-6 pb-4 flex-shrink-0">
           <div className="relative w-full h-[50px]">
-            <Image
-              src="/logo.png"
-              alt="Enclave Logo"
-              fill
-              className="object-contain object-left"
-              priority
-            />
+            {!imageError.logo ? (
+              <Image
+                src="/logo.png"
+                alt="Enclave Logo"
+                fill
+                className="object-contain object-left"
+                priority
+                onError={() => setImageError(prev => ({ ...prev, logo: true }))}
+                unoptimized
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-start">
+                <span className="font-['Poppins'] font-bold text-xl text-blue-600">
+                  ENCLAVE
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* User Profile */}
         <div className="relative px-5 pb-6 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-[39px] h-[39px] rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
-              <Image
-                src="/avatar.png"
-                alt="Avatar"
-                width={39}
-                height={39}
-                className="w-full h-full object-cover"
-              />
+            <div className="w-[39px] h-[39px] rounded-full overflow-hidden flex-shrink-0 bg-gray-200 flex items-center justify-center">
+              {!imageError.avatar ? (
+                <Image
+                  src="/avatar.png"
+                  alt="Avatar"
+                  width={39}
+                  height={39}
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(prev => ({ ...prev, avatar: true }))}
+                  unoptimized
+                />
+              ) : (
+                <User size={24} className="text-gray-500" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-['Poppins'] font-medium text-black text-[15px] truncate">
-                Super Admin
-              </p>
-              <p className="font-['Poppins'] font-light text-black text-[8px]">
-                Kepala Departemen
-              </p>
+              {isLoading ? (
+                <p className="font-['Poppins'] font-medium text-gray-400 text-[15px] truncate">
+                  Memuat...
+                </p>
+              ) : (
+                <p className="font-['Poppins'] font-medium text-black text-[15px] truncate">
+                  {user?.fullName || 'User'}
+                </p>
+              )}
+              
+              {isLoading ? (
+                <p className="font-['Poppins'] font-light text-gray-400 text-[8px]">
+                  Memuat...
+                </p>
+              ) : (
+                <p className="font-['Poppins'] font-light text-black text-[8px]">
+                  {formatRole(user?.role || 'guest')}
+                </p>
+              )}
             </div>
             <button
               onClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -135,13 +178,13 @@ export default function Sidebar({
         <nav className="px-4 space-y-1 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {/* Beranda */}
           <Link
-            href="/beranda-admin"
+            href="/admin/beranda"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/beranda-admin" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/admin/beranda" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <LayoutDashboard size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -152,14 +195,14 @@ export default function Sidebar({
 
           {/* Daftar Surat */}
           <Link
-            href="/daftar-surat-admin"
+            href="/admin/daftar-surat"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
               ${
-                pathname === "/daftar-surat-admin"
+                pathname === "/admin/daftar-surat"
                   ? "bg-[#bcdff6]"
                   : "hover:bg-gray-50"
               }
@@ -173,13 +216,13 @@ export default function Sidebar({
 
           {/* Arsip */}
           <Link
-            href="/arsip-admin"
+            href="/admin/arsip"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/arsip-admin" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/admin/arsip" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Archive size={20} className="text-[#1E1E1E] flex-shrink-0" />

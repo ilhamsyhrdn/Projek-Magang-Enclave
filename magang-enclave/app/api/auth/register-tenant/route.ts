@@ -1,4 +1,3 @@
-// app/api/auth/register-tenant/route.ts (untuk superadmin)
 import { NextRequest, NextResponse } from 'next/server';
 import { createTenantSchema } from '@/lib/db';
 import pool from '@/lib/db';
@@ -8,7 +7,6 @@ export async function POST(request: NextRequest) {
   try {
     const { tenantName, adminName, adminEmail, adminPassword } = await request.json();
 
-    // Validasi input
     if (!tenantName || !adminName || !adminEmail || !adminPassword) {
       return NextResponse.json(
         { message: 'All fields are required' },
@@ -16,13 +14,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buat schema tenant baru
     const sanitizedTenant = await createTenantSchema(tenantName);
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
-    // Insert admin ke superadmin.admins
     await pool.query(
       `INSERT INTO superadmin.admins (name, email, password, tenant_name, role, is_active)
        VALUES ($1, $2, $3, $4, 'admin', true)`,

@@ -2,80 +2,89 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context'
+
+function LoadingSpinner() {
+  return (
+    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+      <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#277ba7]"></div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false); 
+  
+  const { user, isLoading } = useAuth();
 
-  // useEffect(() => {
-  //   const checkLogin = async () => {
-  //     const res = await fetch('/api/auth/me', {
-  //       credentials: 'include',
-  //     });
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
 
-  //     if (res.ok) {
-  //       const data = await res.json();
+    if (user) {
+      let redirectPath = '/user/beranda';
 
-  //       if (data.user.role === 'superadmin') {
-  //         router.replace('/dashboard-superAdmin');
-  //       } else if (data.user.role === 'president') {
-  //         router.replace('/beranda-approver');
-  //       } else if (data.user.role === 'admin') {
-  //         router.replace('/beranda-admin');
-  //       } else {
-  //         router.replace('/beranda-user');
-  //       }
-  //     }
-  //   };
+      switch (user.role) {
+        case 'superadmin':
+          redirectPath = '/dashboard-superadmin';
+          break;
+        case 'admin':
+          redirectPath = '/admin/beranda';
+          break;
+        case 'approver':
+        case 'secretary':
+          redirectPath = '/approver/beranda';
+          break;
+        case 'general':
+          redirectPath = '/user/beranda';
+          break;
+        default:
+          redirectPath = '/user/beranda';
+          break;
+      }
+      
+      console.log(`[Login Page] User already logged in. Redirecting to ${redirectPath}`);
+      router.push(redirectPath);
+    }
+  }, [user, isLoading, router]);
 
-  //   checkLogin();
-  // }, [router]);
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (user) {
+    return null;
+  }
+
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Clear previous error
     setError("");
-    setIsLoading(true);
-    
+    setIsSubmitting(true);
+
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Tampilkan error dari server
-        setError(data.message || 'Email atau Password yang dimasukan salah, silahkan coba lagi');
-        setIsLoading(false);
-        return;
-      }
-
-      // Login berhasil, redirect sesuai role
-      if (data.success && data.redirectTo) {
-        router.push(data.redirectTo);
-      }
+      await login(email, password);
     } catch (error) {
       console.error('Login error:', error);
-      setError('Terjadi kesalahan koneksi, silahkan coba lagi');
-      setIsLoading(false);
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat login';
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="bg-white relative w-full min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-6xl flex flex-col md:flex-row items-center gap-8 md:gap-16">
-        {/* Left side - Building Illustration */}
         <div className="w-full md:w-1/2 flex items-center justify-center">
           <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96">
             <Image
@@ -88,7 +97,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Right side - Login Form */}
         <div className="w-full md:w-1/2 max-w-md">
           <div className="space-y-6">
             <div className="space-y-2">
@@ -112,7 +120,7 @@ export default function LoginPage() {
                   className="w-full h-14 px-4 border border-gray-300 rounded-[10px] text-base font-['Poppins'] focus:outline-none focus:border-[#4180a9] focus:ring-2 focus:ring-[#4180a9]/20"
                   placeholder=""
                   required
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -127,31 +135,29 @@ export default function LoginPage() {
                   className="w-full h-14 px-4 border border-gray-300 rounded-[10px] text-base font-['Poppins'] focus:outline-none focus:border-[#4180a9] focus:ring-2 focus:ring-[#4180a9]/20"
                   placeholder=""
                   required
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isSubmitting}
                 className="w-full h-14 bg-[#4180a9] text-white rounded-[30px] font-['Poppins'] font-semibold text-lg hover:bg-[#356890] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Loading...' : 'Sign In'}
+                {isSubmitting ? 'Loading...' : 'Sign In'}
               </button>
 
-              {/* Lupa Password Link */}
               <div className="text-center">
                 <button
                   type="button"
                   onClick={() => router.push('/lupa-password')}
                   className="font-['Poppins'] text-[#424141] text-sm hover:text-[#4180a9] transition-colors"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 >
                   Lupa password?
                 </button>
               </div>
 
-              {/* Error Message */}
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <p className="text-red-600 text-sm text-center font-['Poppins']">

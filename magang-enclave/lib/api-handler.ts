@@ -1,4 +1,3 @@
-// lib/api-handler.ts - Wrapper untuk API routes dengan tenant context
 import { NextRequest, NextResponse } from 'next/server';
 import { queryWithTenant } from './db';
 

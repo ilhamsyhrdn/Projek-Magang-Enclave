@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from '@/lib/auth-context';
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutGrid, LogOut, X } from "lucide-react";
+import { LayoutGrid, LogOut, X, User } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -17,14 +18,15 @@ export default function SidebarSuperAdmin({
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [imageError, setImageError] = useState({
+    logo: false,
+    avatar: false
+  });
 
-  const handleLogout = () => {
-    // Clear any stored authentication data if needed
-    // localStorage.removeItem('auth_token');
-    // sessionStorage.clear();
-    
-    // Navigate to login page
-    router.push("/login");
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -60,34 +62,50 @@ export default function SidebarSuperAdmin({
         {/* Logo */}
         <div className="px-6 pt-6 pb-4 flex-shrink-0">
           <div className="relative w-full h-[50px]">
-            <Image
-              src="/logo.png"
-              alt="Enclave Logo"
-              fill
-              className="object-contain object-left"
-              priority
-            />
+            {!imageError.logo ? (
+              <Image
+                src="/logo.png"
+                alt="Enclave Logo"
+                fill
+                className="object-contain object-left"
+                priority
+                onError={() => setImageError(prev => ({ ...prev, logo: true }))}
+                unoptimized
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-start">
+                <span className="font-['Poppins'] font-bold text-xl text-blue-600">
+                  ENCLAVE
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* User Profile */}
         <div className="relative px-5 pb-6 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-[39px] h-[39px] rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
-              <Image
-                src="/avatar.png"
-                alt="Avatar"
-                width={39}
-                height={39}
-                className="w-full h-full object-cover"
-              />
+            <div className="w-[39px] h-[39px] rounded-full overflow-hidden flex-shrink-0 bg-gray-200 flex items-center justify-center">
+              {!imageError.avatar ? (
+                <Image
+                  src="/avatar.png"
+                  alt="Avatar"
+                  width={39}
+                  height={39}
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(prev => ({ ...prev, avatar: true }))}
+                  unoptimized
+                />
+              ) : (
+                <User size={24} className="text-gray-500" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-['Poppins'] font-medium text-black text-[15px] truncate">
-                Super Admin +
+                Super Administrator
               </p>
               <p className="font-['Poppins'] font-light text-black text-[8px]">
-                Random
+                Enclave
               </p>
             </div>
           </div>
@@ -97,12 +115,15 @@ export default function SidebarSuperAdmin({
         <nav className="px-4 space-y-1 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {/* Account */}
           <Link
-            href="/dashboard-superAdmin"
+            href="/dashboard-superadmin"
+            onClick={() => {
+              if (window.innerWidth < 1024) onToggle();
+            }}
             className={`
               flex items-center gap-3 px-3 py-3 rounded-lg
               font-['Poppins'] text-[14px] transition-all
               ${
-                pathname === "/dashboard-superAdmin"
+                pathname === "/dashboard-superadmin"
                   ? "bg-[#b8d7e8] text-black font-medium"
                   : "text-[#1E1E1E] hover:bg-gray-100"
               }

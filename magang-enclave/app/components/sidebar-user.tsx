@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from '@/lib/auth-context';
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, X } from "lucide-react";
+import { Bell, X, User } from "lucide-react";
 import { 
   LayoutDashboard, 
   Mail, 
@@ -43,11 +44,21 @@ export default function SidebarUser({
   const pathname = usePathname();
   const router = useRouter();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [imageError, setImageError] = useState({
+    logo: false,
+    avatar: false
+  });
+  const { user, isLoading, logout } = useAuth();
 
-  const handleLogout = () => {
-    router.push("/");
+  const handleLogout = async () => {
+    await logout();
   };
 
+  const formatRole = (role: string) => {
+    if (!role) return '';
+    return role.charAt(0).toUpperCase() + role.slice(1);
+  };
+  
   return (
     <>
       {/* Mobile overlay */}
@@ -81,35 +92,64 @@ export default function SidebarUser({
         {/* Logo */}
         <div className="px-6 pt-6 pb-4 flex-shrink-0">
           <div className="relative w-full h-[50px]">
-            <Image
-              src="/logo.png"
-              alt="Enclave Logo"
-              fill
-              className="object-contain object-left"
-              priority
-            />
+            {!imageError.logo ? (
+              <Image
+                src="/logo.png"
+                alt="Enclave Logo"
+                fill
+                className="object-contain object-left"
+                priority
+                onError={() => setImageError(prev => ({ ...prev, logo: true }))}
+                unoptimized
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-start">
+                <span className="font-['Poppins'] font-bold text-xl text-blue-600">
+                  ENCLAVE
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* User Profile */}
         <div className="relative px-5 pb-6 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-[39px] h-[39px] rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
-              <Image
-                src="/avatar.png"
-                alt="Avatar"
-                width={39}
-                height={39}
-                className="w-full h-full object-cover"
-              />
+            <div className="w-[39px] h-[39px] rounded-full overflow-hidden flex-shrink-0 bg-gray-200 flex items-center justify-center">
+              {!imageError.avatar ? (
+                <Image
+                  src="/avatar.png"
+                  alt="Avatar"
+                  width={39}
+                  height={39}
+                  className="w-full h-full object-cover"
+                  onError={() => setImageError(prev => ({ ...prev, avatar: true }))}
+                  unoptimized
+                />
+              ) : (
+                <User size={24} className="text-gray-500" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-['Poppins'] font-medium text-black text-[15px] truncate">
-                Super User
-              </p>
-              <p className="font-['Poppins'] font-light text-black text-[8px]">
-                sekuruna
-              </p>
+              {isLoading ? (
+                <p className="font-['Poppins'] font-medium text-gray-400 text-[15px] truncate">
+                  Memuat...
+                </p>
+              ) : (
+                <p className="font-['Poppins'] font-medium text-black text-[15px] truncate">
+                  {user?.fullName || 'User'}
+                </p>
+              )}
+              
+              {isLoading ? (
+                <p className="font-['Poppins'] font-light text-gray-400 text-[8px]">
+                  Memuat...
+                </p>
+              ) : (
+                <p className="font-['Poppins'] font-light text-black text-[8px]">
+                  {formatRole(user?.role || 'guest')}
+                </p>
+              )}
             </div>
             <button
               onClick={() => setIsNotificationOpen(!isNotificationOpen)}
@@ -127,13 +167,13 @@ export default function SidebarUser({
         <nav className="px-4 space-y-1 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {/* Beranda */}
           <Link
-            href="/beranda-user"
+            href="/user/beranda"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/beranda-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/user/beranda" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <LayoutDashboard size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -144,13 +184,13 @@ export default function SidebarUser({
 
           {/* Surat Masuk */}
           <Link
-            href="/suratMasuk-user"
+            href="/user/surat-masuk"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/suratMasuk-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/user/surat-masuk" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Mail size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -161,13 +201,13 @@ export default function SidebarUser({
 
           {/* Surat Keluar */}
           <Link
-            href="/suratKeluar-user"
+            href="/user/surat-keluar"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/suratKeluar-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/user/surat-keluar" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Send size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -178,13 +218,13 @@ export default function SidebarUser({
 
           {/* Memo */}
           <Link
-            href="/memo-user"
+            href="/user/memo"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/memo-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/user/memo" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <FileText size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -195,13 +235,13 @@ export default function SidebarUser({
 
           {/* Notulensi */}
           <Link
-            href="/notulensi-user"
+            href="/user/notulensi"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/notulensi-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/user/notulensi" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Clipboard size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -212,13 +252,13 @@ export default function SidebarUser({
 
           {/* Daftar Surat */}
           <Link
-            href="/daftar-surat-user"
+            href="/user/daftar-surat"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/daftar-surat-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/user/daftar-surat" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <List size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -229,13 +269,13 @@ export default function SidebarUser({
 
           {/* Arsip */}
           <Link
-            href="/arsip-user"
+            href="/user/arsip"
             onClick={() => {
               if (window.innerWidth < 1024) onToggle();
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/arsip-user" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname === "/user/arsip" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Archive size={20} className="text-[#1E1E1E] flex-shrink-0" />
