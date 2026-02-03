@@ -52,6 +52,10 @@ export default function DivisiPage() {
       return;
     }
 
+    await saveDivision();
+  };
+
+  const saveDivision = async () => {
     setIsSubmitting(true);
     setError("");
 
@@ -69,10 +73,11 @@ export default function DivisiPage() {
       if (!response.ok) throw new Error(data.message || 'Gagal menyimpan divisi');
 
       alert(isEditMode ? 'Divisi berhasil diperbarui!' : 'Divisi berhasil ditambahkan!');
-      await fetchDivisions(); // Refresh data
+      await fetchDivisions();
       handleCloseModal();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -86,14 +91,16 @@ export default function DivisiPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus divisi ini?")) return;
-
     try {
       const response = await fetch(`/api/admin/divisions/${id}`, { method: 'DELETE' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Gagal menghapus divisi');
 
-      alert('Divisi berhasil dihapus!');
+      if (data.soft_deleted) {
+        alert('Divisi tidak dapat dihapus karena masih digunakan, status diubah menjadi non-aktif.');
+      } else {
+        alert('Divisi berhasil dihapus!');
+      }
       await fetchDivisions();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal menghapus divisi');
@@ -108,7 +115,15 @@ export default function DivisiPage() {
         body: JSON.stringify({ ...division, is_active: !division.is_active }),
       });
       if (!response.ok) throw new Error('Gagal mengubah status');
-      await fetchDivisions();
+
+      // Update state lokal tanpa fetch ulang untuk mempertahankan urutan
+      setDivisions(prevDivisions =>
+        prevDivisions.map(div =>
+          div.id === division.id
+            ? { ...div, is_active: !div.is_active }
+            : div
+        )
+      );
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal mengubah status');
     }
@@ -120,6 +135,7 @@ export default function DivisiPage() {
     setEditId(null);
     setFormData({ name: "", code: "" });
     setError("");
+    setIsSubmitting(false);
   };
 
   // Filter data berdasarkan pencarian
@@ -166,30 +182,38 @@ export default function DivisiPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-[#205d7d] text-white">
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Nama Divisi</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Kode Divisi</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center">Status</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center">Aksi</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left rounded-tl-lg">Nama Divisi</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center">Action</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center rounded-tr-lg">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredDivisions.map((division) => (
-                      <tr key={division.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{division.name}</td>
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{division.code}</td>
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => handleToggleStatus(division)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${division.is_active ? "bg-green-500" : "bg-red-500"}`}>
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${division.is_active ? "translate-x-6" : "translate-x-1"}`} />
-                          </button>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleEdit(division)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Pencil size={18} /></button>
-                            <button onClick={() => handleDelete(division.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={18} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredDivisions.length === 0 ? (
+                      <tr><td colSpan={3} className="px-4 py-8 text-center text-gray-500">Tidak ada data divisi</td></tr>
+                    ) : (
+                      filteredDivisions.map((division) => (
+                        <tr key={division.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{division.name}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <button onClick={() => handleEdit(division)} className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors" title="Edit">
+                                <Pencil size={18} />
+                              </button>
+                              <button onClick={() => handleDelete(division.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div className="flex justify-center">
+                              <button onClick={() => handleToggleStatus(division)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${division.is_active ? "bg-green-500" : "bg-gray-300"}`}>
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${division.is_active ? "translate-x-6" : "translate-x-1"}`} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -204,6 +228,7 @@ export default function DivisiPage() {
           <div className="bg-white rounded-[25px] w-full max-w-md p-6 md:p-8 shadow-2xl relative">
             <button onClick={handleCloseModal} className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg"><X size={24} className="text-gray-500" /></button>
             <h2 className="font-['Poppins'] font-semibold text-2xl mb-6">{isEditMode ? "Edit Divisi" : "Tambah Divisi"}</h2>
+            {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">{error}</div>}
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>
@@ -217,7 +242,7 @@ export default function DivisiPage() {
               </div>
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={handleCloseModal} className="flex-1 h-12 border border-gray-300 text-gray-700 rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-gray-50" disabled={isSubmitting}>Batal</button>
-                <button type="submit" className="flex-1 h-12 bg-[#4180a9] text-white rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-[#356890] disabled:opacity-50" disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Update' : 'Simpan')}</button>
+                <button type="submit" className="flex-1 h-12 bg-[#4180a9] text-white rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-[#356890] disabled:opacity-50" disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Simpan')}</button>
               </div>
             </form>
           </div>

@@ -5,10 +5,10 @@ import Sidebar from "@/app/components/sidebar-user";
 import { Menu, Search, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function NotulensiPage() {
+export default function SuratMasukPage() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("notulensi");
+  const [activeTab, setActiveTab] = useState("surat-masuk");
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -20,20 +20,25 @@ export default function NotulensiPage() {
     { id: "notulensi", label: "Notulensi", path: "/user/daftar-surat/notulensi" },
   ];
 
+  const handleTabClick = (tabId: string, path: string) => {
+    setActiveTab(tabId);
+    router.push(path);
+  };
+
   const allData = [
-    { no: 1, noNotulensi: "N-001/2025", tanggalNotulensi: "2025-12-12", judulNotulensi: "Rapat Evaluasi Program Kerja", divisi: "Dept. Pengembangan Organisasi", pembuat: "Ahmad Rizki", status: "Menunggu", statusColor: "#D9D9D9" },
-    { no: 2, noNotulensi: "N-002/2025", tanggalNotulensi: "2025-12-13", judulNotulensi: "Meeting Kerjasama Eksternal", divisi: "Dept. Hubungan Eksternal", pembuat: "Siti Nurhaliza", status: "Diproses", statusColor: "#FFBD66" },
-    { no: 3, noNotulensi: "N-003/2025", tanggalNotulensi: "2025-12-14", judulNotulensi: "Koordinasi Departemen IT", divisi: "Dept. Pengembangan Teknologi & Informasi", pembuat: "Arief Rahman", status: "Selesai", statusColor: "#56F2A7" },
-    { no: 4, noNotulensi: "N-004/2025", tanggalNotulensi: "2025-12-15", judulNotulensi: "Perencanaan Kegiatan 2026", divisi: "Dept. Pengembangan Organisasi", pembuat: "Andi Pratama", status: "Menunggu", statusColor: "#D9D9D9" },
-    { no: 5, noNotulensi: "N-005/2025", tanggalNotulensi: "2025-12-16", judulNotulensi: "Presentasi Proposal Sponsorship", divisi: "Dept. Kewirausahaan", pembuat: "Dewi Lestari", status: "Diproses", statusColor: "#FFBD66" },
-    { no: 6, noNotulensi: "N-006/2025", tanggalNotulensi: "2025-12-17", judulNotulensi: "Review Kinerja Departemen", divisi: "Dept. Pengembangan Organisasi", pembuat: "Budi Santoso", status: "Selesai", statusColor: "#56F2A7" },
-    { no: 7, noNotulensi: "N-007/2025", tanggalNotulensi: "2025-12-18", judulNotulensi: "Review Budget Keuangan", divisi: "Dept. Keuangan", pembuat: "Bambang Setiawan", status: "Menunggu", statusColor: "#D9D9D9" },
-    { no: 8, noNotulensi: "N-008/2025", tanggalNotulensi: "2025-12-19", judulNotulensi: "Diskusi Kerjasama Partnership", divisi: "Dept. Hubungan Eksternal", pembuat: "Maya Indah", status: "Diproses", statusColor: "#FFBD66" },
-    { no: 9, noNotulensi: "N-009/2025", tanggalNotulensi: "2025-12-20", judulNotulensi: "Program Pelatihan Minat Bakat", divisi: "Dept. Minat Bakat", pembuat: "Sari Wulandari", status: "Selesai", statusColor: "#56F2A7" },
-    { no: 10, noNotulensi: "N-010/2025", tanggalNotulensi: "2025-12-21", judulNotulensi: "Pengembangan Kompetensi", divisi: "Dept. Keprofesian", pembuat: "Lina Kusuma", status: "Menunggu", statusColor: "#D9D9D9" },
-    { no: 11, noNotulensi: "N-011/2025", tanggalNotulensi: "2025-12-22", judulNotulensi: "Koordinasi Kegiatan Sosial", divisi: "Dept. Sosial", pembuat: "Rudi Hartono", status: "Diproses", statusColor: "#FFBD66" },
-    { no: 12, noNotulensi: "N-012/2025", tanggalNotulensi: "2025-12-23", judulNotulensi: "Strategi Publikasi Media", divisi: "Dept. Media Informasi", pembuat: "Dina Marlina", status: "Selesai", statusColor: "#56F2A7" },
-    { no: 13, noNotulensi: "N-013/2025", tanggalNotulensi: "2025-12-24", judulNotulensi: "Penutupan Semester", divisi: "Dept. Pengembangan Organisasi", pembuat: "Fajar Nugroho", status: "Menunggu", statusColor: "#D9D9D9" },
+    { no: 1, namaSurat: "Surat Kerjasama", nomorSurat: "01/SM/12/2025", pengirim: "PT. Mitra Sejahtera", penerima: "Departemen Hubungan Eksternal", tanggal: "2025-12-12", status: "Ditolak", statusColor: "#EF4444" },
+    { no: 2, namaSurat: "Surat Permohonan", nomorSurat: "02/SM/12/2025", pengirim: "Universitas Indonesia", penerima: "Departemen Kelimuan", tanggal: "2025-12-11", status: "Diproses", statusColor: "#FFBD66" },
+    { no: 3, namaSurat: "Surat Peminjaman Dana", nomorSurat: "03/SM/12/2025", pengirim: "BEM FT", penerima: "Departemen Keuangan", tanggal: "2025-12-10", status: "Selesai", statusColor: "#56F2A7" },
+    { no: 4, namaSurat: "Surat Undangan", nomorSurat: "04/SM/12/2025", pengirim: "Himpunan Mahasiswa", penerima: "Departemen Hubungan Internal", tanggal: "2025-12-09", status: "Ditolak", statusColor: "#EF4444" },
+    { no: 5, namaSurat: "Surat Pemberitahuan", nomorSurat: "05/SM/12/2025", pengirim: "Fakultas Teknik", penerima: "Departemen Media Informasi", tanggal: "2025-12-08", status: "Diproses", statusColor: "#FFBD66" },
+    { no: 6, namaSurat: "Surat Izin Kegiatan", nomorSurat: "06/SM/12/2025", pengirim: "Dekanat", penerima: "Departemen Pengembangan Organisasi", tanggal: "2025-12-07", status: "Selesai", statusColor: "#56F2A7" },
+    { no: 7, namaSurat: "Surat Sponsorship", nomorSurat: "07/SM/12/2025", pengirim: "PT. Tech Innovation", penerima: "Departemen Kewirausahaan", tanggal: "2025-12-06", status: "Ditolak", statusColor: "#EF4444" },
+    { no: 8, namaSurat: "Surat Kerjasama Akademik", nomorSurat: "08/SM/12/2025", pengirim: "Institut Teknologi", penerima: "Departemen Keprofesian", tanggal: "2025-12-05", status: "Diproses", statusColor: "#FFBD66" },
+    { no: 9, namaSurat: "Surat Permohonan Data", nomorSurat: "09/SM/12/2025", pengirim: "Lembaga Penelitian", penerima: "Departemen Pengembangan Teknologi & Informasi", tanggal: "2025-12-04", status: "Selesai", statusColor: "#56F2A7" },
+    { no: 10, namaSurat: "Surat Kegiatan Sosial", nomorSurat: "10/SM/12/2025", pengirim: "PMI Cabang", penerima: "Departemen Sosial", tanggal: "2025-12-03", status: "Ditolak", statusColor: "#EF4444" },
+    { no: 11, namaSurat: "Surat Workshop", nomorSurat: "11/SM/12/2025", pengirim: "Komunitas Developer", penerima: "Departemen Minat Bakat", tanggal: "2025-12-02", status: "Diproses", statusColor: "#FFBD66" },
+    { no: 12, namaSurat: "Surat Audit Internal", nomorSurat: "12/SM/12/2025", pengirim: "Unit Audit Internal", penerima: "Departemen Ketertiban Internal", tanggal: "2025-12-01", status: "Selesai", statusColor: "#56F2A7" },
+    { no: 13, namaSurat: "Surat Pemberitahuan", nomorSurat: "13/SM/12/2025", pengirim: "Rektorat", penerima: "Departemen Hubungan Eksternal", tanggal: "2025-11-30", status: "Ditolak", statusColor: "#EF4444" },
   ];
 
   const formatDate = (dateStr: string) => {
@@ -43,16 +48,16 @@ export default function NotulensiPage() {
   };
 
   const filteredData = allData.filter(item => {
-    const matchSearch = !searchQuery || 
-      item.noNotulensi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.judulNotulensi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.divisi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.pembuat.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchSearch = !searchQuery ||
+      item.namaSurat.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.nomorSurat.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.pengirim.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.penerima.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.status.toLowerCase().includes(searchQuery.toLowerCase());
 
     let matchDate = true;
     if (startDate && endDate) {
-      const itemDate = new Date(item.tanggalNotulensi);
+      const itemDate = new Date(item.tanggal);
       const start = new Date(startDate);
       const end = new Date(endDate);
       matchDate = itemDate >= start && itemDate <= end;
@@ -60,11 +65,6 @@ export default function NotulensiPage() {
 
     return matchSearch && matchDate;
   });
-
-  const handleTabClick = (tabId: string, path: string) => {
-    setActiveTab(tabId);
-    router.push(path);
-  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -121,27 +121,28 @@ export default function NotulensiPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari notulensi, no notulensi ..."
+                  placeholder="Cari surat, no surat ..."
                   className="w-full h-12 pl-12 pr-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
                 />
               </div>
 
               {/* Date Range Picker */}
-              <div className="flex items-center gap-2 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[280px]">
+              <div className="flex items-center gap-3 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[300px]">
                 <input
-                  type="date"
-                  value={startDate}
+                  type="date" value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="font-['Poppins'] text-sm focus:outline-none"
+                  min="1900-01-01"
+                  max="2999-12-31"
+                  className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1"
                 />
-                <span className="text-gray-400">-</span>
+                <span className="text-gray-400 font-medium">-</span>
                 <input
-                  type="date"
-                  value={endDate}
+                  type="date" value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="font-['Poppins'] text-sm focus:outline-none"
+                  min="1900-01-01"
+                  max="2999-12-31"
+                  className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1"
                 />
-                <Calendar size={20} className="text-gray-400 flex-shrink-0" />
               </div>
             </div>
 
@@ -154,19 +155,19 @@ export default function NotulensiPage() {
                       No
                     </th>
                     <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
-                      No Notulensi
+                      Nama Surat
                     </th>
                     <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
-                      Tanggal Notulensi
+                      Nomor surat
                     </th>
                     <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
-                      Judul Notulensi
+                      Pengirim
                     </th>
                     <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
-                      Divisi
+                      Penerima
                     </th>
                     <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
-                      Pembuat
+                      Tanggal
                     </th>
                     <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center rounded-tr-[10px]">
                       Status
@@ -175,27 +176,28 @@ export default function NotulensiPage() {
                 </thead>
                 <tbody>
                   {filteredData.length > 0 ? filteredData.map((row, index) => (
-                    <tr 
-                      key={index} 
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    <tr
+                      key={index}
+                      onClick={() => router.push(`/user/notulensi?id=${row.no}`)}
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
                         {row.no}
                       </td>
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
-                        {row.noNotulensi}
+                        {row.namaSurat}
                       </td>
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
-                        {formatDate(row.tanggalNotulensi)}
+                        {row.nomorSurat}
                       </td>
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
-                        {row.judulNotulensi}
+                        {row.pengirim}
                       </td>
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
-                        {row.divisi}
+                        {row.penerima}
                       </td>
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
-                        {row.pembuat}
+                        {formatDate(row.tanggal)}
                       </td>
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -223,3 +225,5 @@ export default function NotulensiPage() {
     </div>
   );
 }
+
+

@@ -43,17 +43,27 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const departments = await queryWithTenant(
       tenantName,
-      'SELECT id FROM departments WHERE division_id = $1',
+      'SELECT id FROM departments WHERE division_id = $1 AND is_active = true',
       [id]
     );
 
     if (departments.length > 0) {
-      return NextResponse.json({ message: 'Cannot delete division, it is being used by a department' }, { status: 400 });
+      // Soft delete: set is_active to false
+      await queryWithTenant(
+        tenantName,
+        'UPDATE divisions SET is_active = false, updated_at = NOW() WHERE id = $1',
+        [id]
+      );
+      return NextResponse.json({ 
+        message: 'Division is being used, status changed to inactive',
+        soft_deleted: true
+      });
     }
 
+    // Hard delete if not used
     await queryWithTenant(tenantName, 'DELETE FROM divisions WHERE id = $1', [id]);
 
-    return NextResponse.json({ message: 'Division deleted successfully' });
+    return NextResponse.json({ message: 'Division deleted successfully', soft_deleted: false });
   } catch (error) {
     console.error('Error deleting division:', error);
     return NextResponse.json({ message: 'Failed to delete division' }, { status: 500 });

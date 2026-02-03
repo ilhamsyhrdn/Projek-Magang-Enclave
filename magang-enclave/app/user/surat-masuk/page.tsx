@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import SidebarUser from "@/app/components/sidebar-user";
-import { Menu, Search, Filter, Plus, FileText, Download, Archive, History, X, Send, ChevronRight } from "lucide-react";
+import { Menu, Search, Filter, FileText, Download, Archive, History, X, Send, ChevronRight } from "lucide-react";
 import Image from "next/image";
 
 interface Surat {
@@ -17,12 +18,15 @@ interface Surat {
   tanggalSurat: string;
   diterimaTanggal: string;
   perihal: string;
+  priority?: 'high' | 'medium' | 'low';
+  priorityBadge?: string;
   instansiPenerima: string;
   penggunaSuratKeluar: string;
   isRead: boolean;
 }
 
 export default function SuratMasukUserPage() {
+  const searchParams = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSurat, setSelectedSurat] = useState<Surat | null>(null);
@@ -67,6 +71,8 @@ export default function SuratMasukUserPage() {
       tanggalSurat: "03/11/2025",
       diterimaTanggal: "06/12/2025",
       perihal: "Surat Keluar - POP",
+      priority: 'high',
+      priorityBadge: 'High Priority',
       instansiPenerima: "BEM Universitas Padjajaran",
       penggunaSuratKeluar: "Chandra Wibawa",
       isRead: false
@@ -99,6 +105,8 @@ export default function SuratMasukUserPage() {
       tanggalSurat: "03/11/2025",
       diterimaTanggal: "06/12/2025",
       perihal: "Surat Keluar - POP",
+      priority: 'low',
+      priorityBadge: 'Low Priority',
       instansiPenerima: "Fakultas Teknik",
       penggunaSuratKeluar: "Siti Nurhaliza",
       isRead: false
@@ -155,7 +163,23 @@ export default function SuratMasukUserPage() {
 
   useEffect(() => {
     setSuratItems(suratList);
-  }, []);
+
+    // Auto-open detail from notification
+    const id = searchParams.get('id');
+    if (id) {
+      const surat = suratList.find(s => s.id === parseInt(id));
+      if (surat) {
+        setSelectedSurat(surat);
+        if (!surat.isRead) {
+          setSuratItems(prevItems =>
+            prevItems.map(item =>
+              item.id === surat.id ? { ...item, isRead: true } : item
+            )
+          );
+        }
+      }
+    }
+  }, [searchParams]);
 
   const handleSuratClick = (surat: Surat) => {
     if (!surat.isRead) {
@@ -214,38 +238,49 @@ export default function SuratMasukUserPage() {
                     className="w-full h-12 pl-12 pr-4 border border-gray-300 rounded-[12px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
                   />
                 </div>
-                <button className="p-3 border border-gray-300 rounded-[12px] hover:bg-gray-50 transition-colors flex-shrink-0">
-                  <Filter size={20} className="text-gray-600" />
-                </button>
-                <button 
-                  onClick={() => setIsKategoriModalOpen(true)}
-                  className="p-3 bg-[#4180a9] text-white rounded-[12px] hover:bg-[#356890] transition-colors flex-shrink-0"
-                >
-                  <Plus size={20} />
-                </button>
               </div>
 
               {/* Surat List */}
               <div className="space-y-4 overflow-y-auto flex-1 pr-2 pb-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                {suratItems.map((surat) => {
+                {suratItems.filter(surat =>
+                  surat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  surat.noSurat.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  surat.perihal.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  surat.instansiPengirim.toLowerCase().includes(searchQuery.toLowerCase())
+                ).map((surat) => {
                   const leftBorderColor = !surat.isRead ? '#3B82F6' : 'transparent';
 
                   return (
                     <div
                       key={surat.id}
                       onClick={() => handleSuratClick(surat)}
-                      className="bg-white rounded-[15px] p-4 border-l-[6px] border-t-0 border-r-0 border-b-0 shadow-md hover:shadow-lg transition-all cursor-pointer hover:!border-[#60A5FA] hover:!border-l-[6px] hover:!border-t-[2px] hover:!border-r-[2px] hover:!border-b-[2px]"
+                      className="bg-white rounded-[15px] p-3 border-l-[4px] shadow-md hover:shadow-lg transition-all cursor-pointer"
                       style={{ borderLeftColor: leftBorderColor }}
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-start justify-between mb-1">
                         <h3 className="font-['Poppins'] font-semibold text-[#1e1e1e] text-sm">
                           {surat.title}
                         </h3>
-                        <span className="font-['Poppins'] text-xs text-gray-500">
-                          {surat.time}
-                        </span>
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="font-['Poppins'] text-xs text-gray-500">
+                            {surat.time}
+                          </span>
+                          {surat.priority ? (
+                            <span
+                              className="px-2 py-0.5 rounded-full font-['Poppins'] text-[10px] font-medium text-white"
+                              style={{
+                                backgroundColor: surat.priority === 'high' ? '#DC2626' :
+                                                surat.priority === 'medium' ? '#F59E0B' : '#10B981'
+                              }}
+                            >
+                              {surat.priorityBadge}
+                            </span>
+                          ) : (
+                            <span className="h-[18px]" />
+                          )}
+                        </div>
                       </div>
-                      <p className="font-['Poppins'] text-xs text-gray-600 mb-2">
+                      <p className="font-['Poppins'] text-xs text-gray-600 mb-1">
                         {surat.category}
                       </p>
                       <div className="flex items-center justify-between gap-2">
@@ -354,29 +389,28 @@ export default function SuratMasukUserPage() {
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3 mb-6">
-                    <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
-                      <Archive size={18} />
-                      Arsip Surat Masuk
-                    </button>
-                    <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
+                    <button
+                      onClick={() => {
+                        // Create a dummy PDF download
+                        const link = document.createElement('a');
+                        link.href = '/logo-enclave.png'; // Replace with actual PDF URL
+                        link.download = `Surat-Masuk-${selectedSurat.noSurat}.pdf`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors"
+                    >
                       <Download size={18} />
                       Unduh Surat
                     </button>
-                    <button 
+                    <button
                       onClick={() => setIsLogHistoryOpen(true)}
                       className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors"
                     >
                       <History size={18} />
                       Log History
                     </button>
-                    <div className="ml-auto flex items-center gap-2">
-                      <button className="p-3 bg-[#10B981] text-white rounded-full hover:bg-[#059669] transition-colors shadow-md">
-                        <Download size={20} />
-                      </button>
-                      <button className="p-3 bg-[#10B981] text-white rounded-full hover:bg-[#059669] transition-colors shadow-md">
-                        <Send size={20} />
-                      </button>
-                    </div>
                   </div>
 
                   {/* Document Preview */}
@@ -388,15 +422,7 @@ export default function SuratMasukUserPage() {
                       <p className="font-['Poppins'] text-lg text-[#1e1e1e] mb-8">
                         {selectedSurat.perihal}
                       </p>
-                      <div className="w-80 h-80 mx-auto relative">
-                        <Image
-                          src="/logo-enclave.png"
-                          alt="Document Preview"
-                          width={320}
-                          height={320}
-                          className="object-contain opacity-80"
-                        />
-                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -543,9 +569,9 @@ export default function SuratMasukUserPage() {
       {/* Log History Modal */}
       {isLogHistoryOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-[70] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[15px] w-full max-w-[550px] max-h-[85vh] overflow-hidden shadow-2xl">
+          <div className="bg-white rounded-[15px] w-full max-w-[550px] flex flex-col shadow-2xl" style={{ maxHeight: '85vh' }}>
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 flex-shrink-0">
               <h2 className="font-['Poppins'] font-semibold text-[22px] text-[#4180a9]">
                 Log History
               </h2>
@@ -558,7 +584,7 @@ export default function SuratMasukUserPage() {
             </div>
 
             {/* Modal Content */}
-            <div className="overflow-y-auto max-h-[calc(85vh-76px)] p-6">
+            <div className="overflow-y-auto flex-1 p-6">
               <div className="space-y-6">
                 {logHistory.map((log, index) => (
                   <div key={log.id} className="flex gap-4 relative">

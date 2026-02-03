@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import SidebarApprover from "@/app/components/sidebar-approver";
 import { Menu, Search, Filter, FileText, Download, History, X, Check, Clock, Archive } from "lucide-react";
 import Image from "next/image";
@@ -27,6 +28,7 @@ export default function NotulensiApproverPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNotulensi, setSelectedNotulensi] = useState<Notulensi | null>(null);
   const [isLogHistoryOpen, setIsLogHistoryOpen] = useState(false);
+  const searchParams = useSearchParams();
 
   const logHistory = [
     { id: 1, tanggal: "1 Januari 2025 | 19:00", aksi: "Notulensi ditolak oleh Chandra wibawa", detail: "---" },
@@ -103,6 +105,26 @@ export default function NotulensiApproverPage() {
   ];
 
   const [notulensiItems, setNotulensiItems] = useState<Notulensi[]>(notulensiList);
+
+  // Auto-select notulensi from URL parameter
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id) {
+      const notulensiId = parseInt(id);
+      const notulensi = notulensiItems.find(n => n.id === notulensiId);
+      if (notulensi) {
+        setSelectedNotulensi(notulensi);
+        // Mark as read
+        if (!notulensi.isRead) {
+          setNotulensiItems(prevItems =>
+            prevItems.map(item =>
+              item.id === notulensiId ? { ...item, isRead: true } : item
+            )
+          );
+        }
+      }
+    }
+  }, [searchParams, notulensiItems]);
 
   const handleNotulensiClick = (notulensi: Notulensi) => {
     if (!notulensi.isRead) {
@@ -196,21 +218,23 @@ export default function NotulensiApproverPage() {
                     className="w-full h-12 pl-12 pr-4 border border-gray-300 rounded-[12px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
                   />
                 </div>
-                <button className="p-3 border border-gray-300 rounded-[12px] hover:bg-gray-50 transition-colors flex-shrink-0">
-                  <Filter size={20} className="text-gray-600" />
-                </button>
               </div>
 
               {/* Notulensi List */}
               <div className="space-y-4 overflow-y-auto flex-1 pr-2 pb-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                {notulensiItems.map((notulensi) => {
+                {notulensiItems.filter(notulensi =>
+                  notulensi.judulNotulen.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  notulensi.noNotulensi.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  notulensi.perihal.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  notulensi.rapat.toLowerCase().includes(searchQuery.toLowerCase())
+                ).map((notulensi) => {
                   const leftBorderColor = !notulensi.isRead ? '#3B82F6' : 'transparent';
 
                   return (
                     <div
                       key={notulensi.id}
                       onClick={() => handleNotulensiClick(notulensi)}
-                      className="bg-white rounded-[15px] p-4 border-l-[6px] border-t-0 border-r-0 border-b-0 shadow-md hover:shadow-lg transition-all cursor-pointer hover:!border-[#60A5FA] hover:!border-l-[6px] hover:!border-t-[2px] hover:!border-r-[2px] hover:!border-b-[2px]"
+                      className="bg-white rounded-[15px] p-4 border-l-[4px] shadow-md hover:shadow-lg transition-all cursor-pointer"
                       style={{ borderLeftColor: leftBorderColor }}
                     >
                       <div className="flex items-start justify-between mb-2">
@@ -371,15 +395,6 @@ export default function NotulensiApproverPage() {
                     <p className="font-['Poppins'] text-lg text-[#1e1e1e] mb-8">
                       {selectedNotulensi.rapat}
                     </p>
-                    <div className="w-80 h-80 mx-auto relative">
-                      <Image
-                        src="/logo-enclave.png"
-                        alt="Document Preview"
-                        width={320}
-                        height={320}
-                        className="object-contain opacity-80"
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
@@ -403,8 +418,8 @@ export default function NotulensiApproverPage() {
       {/* Log History Modal */}
       {isLogHistoryOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b">
+          <div className="bg-white rounded-lg max-w-3xl w-full flex flex-col" style={{ maxHeight: '80vh' }}>
+            <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
               <h2 className="font-['Poppins'] font-semibold text-xl">Log History</h2>
               <button
                 onClick={() => setIsLogHistoryOpen(false)}
@@ -413,7 +428,7 @@ export default function NotulensiApproverPage() {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
+            <div className="p-6 overflow-y-auto flex-1">
               <div className="space-y-4">
                 {logHistory.map((log) => (
                   <div key={log.id} className="border-l-4 border-[#277ba7] pl-4 py-2">

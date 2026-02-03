@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Sidebar from "@/app/components/sidebar-admin";
 import { Menu, Search, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,31 @@ export default function SuratKeluarPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
+
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value) {
+      const date = new Date(value);
+      const formatted = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+      setStartDate(formatted);
+    } else {
+      setStartDate("");
+    }
+  };
+
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value) {
+      const date = new Date(value);
+      const formatted = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+      setEndDate(formatted);
+    } else {
+      setEndDate("");
+    }
+  };
 
   const tabs = [
     { id: "surat-masuk", label: "Surat Masuk", path: "/admin/daftar-surat/surat-masuk" },
@@ -48,7 +73,7 @@ export default function SuratKeluarPage() {
   };
 
   const filteredData = allData.filter(item => {
-    const matchSearch = !searchQuery || 
+    const matchSearch = !searchQuery ||
       item.namaSurat.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.nomorSurat.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.pengirim.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -127,21 +152,22 @@ export default function SuratKeluarPage() {
               </div>
 
               {/* Date Range Picker */}
-              <div className="flex items-center gap-2 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[280px]">
+              <div className="flex items-center gap-3 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[300px]">
                 <input
-                  type="date"
-                  value={startDate}
+                  type="date" value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="font-['Poppins'] text-sm focus:outline-none"
+                  min="1900-01-01"
+                  max="2999-12-31"
+                  className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1"
                 />
-                <span className="text-gray-400">-</span>
+                <span className="text-gray-400 font-medium">-</span>
                 <input
-                  type="date"
-                  value={endDate}
+                  type="date" value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="font-['Poppins'] text-sm focus:outline-none"
+                  min="1900-01-01"
+                  max="2999-12-31"
+                  className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1"
                 />
-                <Calendar size={20} className="text-gray-400 flex-shrink-0" />
               </div>
             </div>
 
@@ -175,8 +201,8 @@ export default function SuratKeluarPage() {
                 </thead>
                 <tbody>
                   {filteredData.length > 0 ? filteredData.map((row, index) => (
-                    <tr 
-                      key={index} 
+                    <tr
+                      key={index}
                       className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                     >
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
@@ -223,3 +249,5 @@ export default function SuratKeluarPage() {
     </div>
   );
 }
+
+

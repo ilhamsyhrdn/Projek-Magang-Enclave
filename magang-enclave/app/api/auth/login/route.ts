@@ -14,36 +14,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // SUPERADMIN HARDCODED
-    if (email === 'superadmin@superadmin.com' && password === 'superadmin') {
+    // HARDCODED TEST ACCOUNTS
+    const testAccounts = [
+      // Superadmin
+      { userId: 0, email: 'superadmin@superadmin.com', password: 'superadmin', role: 'superadmin', name: 'Super Administrator', tenantName: 'superadmin', employeeId: 'SUPERADMIN', redirectTo: '/dashboard-superAdmin' },
+      // Admin
+      { userId: 1001, email: 'himatif@admin.com', password: 'himatif123', role: 'admin', name: 'Admin Himatif', tenantName: 'himatif', employeeId: 'ADM001', redirectTo: '/admin/beranda' },
+      // Approvers
+      { userId: 2001, email: 'ilham@mail.com', password: 'ilham123', role: 'approver', name: 'Ilham', tenantName: 'himatif', employeeId: 'APP001', redirectTo: '/approver/beranda' },
+      { userId: 2002, email: 'rayhan@mail.com', password: 'rayhan123', role: 'approver', name: 'Rayhan', tenantName: 'himatif', employeeId: 'APP002', redirectTo: '/approver/beranda' },
+      { userId: 2003, email: 'candra@mail.com', password: 'candra123', role: 'approver', name: 'Candra', tenantName: 'himatif', employeeId: 'APP003', redirectTo: '/approver/beranda' },
+      // Direktur
+      { userId: 2004, email: 'direktur@mail.com', password: 'direktur123', role: 'direktur', name: 'Direktur', tenantName: 'himatif', employeeId: 'DIR001', redirectTo: '/direktur/beranda' },
+      // User/General
+      { userId: 3001, email: 'pegawai@mail.com', password: 'pegawai123', role: 'general', name: 'Pegawai', tenantName: 'himatif', employeeId: 'EMP001', redirectTo: '/user/beranda' },
+      // ADK
+      { userId: 4001, email: 'adk@mail.com', password: 'adk123', role: 'adk', name: 'ADK User', tenantName: 'himatif', employeeId: 'ADK001', redirectTo: '/adk/beranda' },
+    ];
+
+    const testAccount = testAccounts.find(acc => acc.email === email && acc.password === password);
+    
+    if (testAccount) {
       const accessToken = signToken({
-        userId: 0,
-        email: email,
-        tenantName: 'superadmin',
-        role: 'superadmin',
-        employeeId: 'SUPERADMIN',
+        userId: testAccount.userId,
+        email: testAccount.email,
+        tenantName: testAccount.tenantName,
+        role: testAccount.role,
+        employeeId: testAccount.employeeId,
       });
 
       const refreshToken = signRefreshToken({
-        userId: 0,
-        email: email,
-        tenantName: 'superadmin',
-        role: 'superadmin',
-        employeeId: 'SUPERADMIN',
+        userId: testAccount.userId,
+        email: testAccount.email,
+        tenantName: testAccount.tenantName,
+        role: testAccount.role,
+        employeeId: testAccount.employeeId,
       });
 
       const response = NextResponse.json({
         success: true,
         message: 'Login berhasil',
         user: {
-          id: 0,
-          email: email,
-          fullName: 'Super Administrator',
-          tenantName: 'superadmin',
-          role: 'superadmin',
-          employeeId: 'SUPERADMIN',
+          id: testAccount.userId,
+          email: testAccount.email,
+          fullName: testAccount.name,
+          tenantName: testAccount.tenantName,
+          role: testAccount.role,
+          employeeId: testAccount.employeeId,
         },
-        redirectTo: '/dashboard-superadmin',
+        redirectTo: testAccount.redirectTo,
       });
 
       response.cookies.set('token', accessToken, {

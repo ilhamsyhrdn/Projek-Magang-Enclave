@@ -51,7 +51,7 @@ export default function ArsipNotulensiPage() {
   };
 
   const filteredData = allData.filter(item => {
-    const matchSearch = !searchQuery || 
+    const matchSearch = !searchQuery ||
       item.noNotulensi.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.judulRapat.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.lokasi.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -103,7 +103,7 @@ export default function ArsipNotulensiPage() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
-      
+
       <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-[269px]' : 'lg:ml-0'}`}>
         <div className="sticky top-0 z-30 bg-gray-50 py-4 px-6 lg:px-10">
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-100 transition-colors border border-gray-200">
@@ -137,11 +137,10 @@ export default function ArsipNotulensiPage() {
                   className="w-full h-12 pl-12 pr-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
                 />
               </div>
-              <div className="flex items-center gap-2 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[280px]">
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="font-['Poppins'] text-sm focus:outline-none" />
-                <span className="text-gray-400">-</span>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="font-['Poppins'] text-sm focus:outline-none" />
-                <Calendar size={20} className="text-gray-400 flex-shrink-0" />
+              <div className="flex items-center gap-3 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[300px]">
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1" />
+                <span className="text-gray-400 font-medium">-</span>
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1" />
               </div>
             </div>
 
@@ -217,3 +216,5 @@ export default function ArsipNotulensiPage() {
     </div>
   );
 }
+
+

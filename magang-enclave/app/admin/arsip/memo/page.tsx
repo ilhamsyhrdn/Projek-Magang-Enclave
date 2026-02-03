@@ -51,7 +51,7 @@ export default function ArsipMemoPage() {
   };
 
   const filteredData = allData.filter(item => {
-    const matchSearch = !searchQuery || 
+    const matchSearch = !searchQuery ||
       item.noMemo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.kategori.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.tujuan.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -157,21 +157,22 @@ export default function ArsipMemoPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[280px]">
+              <div className="flex items-center gap-3 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[300px]">
                 <input
-                  type="date"
-                  value={startDate}
+                  type="date" value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="font-['Poppins'] text-sm focus:outline-none"
+                  min="1900-01-01"
+                  max="2999-12-31"
+                  className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1"
                 />
-                <span className="text-gray-400">-</span>
+                <span className="text-gray-400 font-medium">-</span>
                 <input
-                  type="date"
-                  value={endDate}
+                  type="date" value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="font-['Poppins'] text-sm focus:outline-none"
+                  min="1900-01-01"
+                  max="2999-12-31"
+                  className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1"
                 />
-                <Calendar size={20} className="text-gray-400 flex-shrink-0" />
               </div>
             </div>
 
@@ -181,7 +182,7 @@ export default function ArsipMemoPage() {
                   <tr className="bg-[#205d7d]">
                     <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white rounded-tl-[10px] min-w-[60px]">No</th>
                     <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[120px]">No Memo</th>
-                    <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[120px]">Tanggal Memo</th>
+                    <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[120px]">Tanggal Dibuat</th>
                     <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[100px]">Kategori</th>
                     <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[200px]">Tujuan</th>
                     <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[150px]">Perihal</th>
@@ -191,8 +192,8 @@ export default function ArsipMemoPage() {
                 <tbody>
                   {filteredData.length > 0 ? (
                     filteredData.map((row, index) => (
-                      <tr 
-                        key={index} 
+                      <tr
+                        key={index}
                         className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
                           index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                         }`}
@@ -218,7 +219,7 @@ export default function ArsipMemoPage() {
                           </span>
                         </td>
                         <td className="font-['Poppins'] text-sm py-4 px-4 text-center">
-                          <button 
+                          <button
                             onClick={() => handleDownload(row)}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-[#4180a9] text-white rounded-lg hover:bg-[#356890] transition-colors"
                           >
@@ -244,7 +245,7 @@ export default function ArsipMemoPage() {
 
       {tooltipContent && tooltipPosition && (
         <>
-          <div 
+          <div
             className="fixed inset-0 bg-black/20 z-40"
             onClick={closeTooltip}
           />
@@ -273,3 +274,5 @@ export default function ArsipMemoPage() {
     </div>
   );
 }
+
+

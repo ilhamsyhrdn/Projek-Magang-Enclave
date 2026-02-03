@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Sidebar from "@/app/components/sidebar-admin";
-import { Menu, Search, Pencil, Trash2, Plus, X } from "lucide-react";
+import { Menu, Search, Pencil, Trash2, Plus, X, Eye, EyeOff } from "lucide-react";
 
 interface User {
   id: number;
@@ -20,7 +20,7 @@ interface User {
 }
 
 interface Division { id: number; name: string; }
-interface Department { id: number; name: string; }
+interface Department { id: number; name: string; division_id: number; }
 interface Position { id: number; name: string; }
 
 const roleOptions = ['approver', 'secretary', 'general'];
@@ -34,11 +34,19 @@ export default function PegawaiPage() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confirmError, setConfirmError] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState({
+    password: "",
+    confirmPassword: "",
+  });
   const [formData, setFormData] = useState<{
     employee_id: string;
     full_name: string;
@@ -58,6 +66,16 @@ export default function PegawaiPage() {
     position_id: "",
     role: "",
   });
+
+  // State untuk custom dropdown
+  const [isDivisionOpen, setIsDivisionOpen] = useState(false);
+  const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
+  const [isPositionOpen, setIsPositionOpen] = useState(false);
+
+  // Filter departemen berdasarkan divisi yang dipilih
+  const filteredDepartments = formData.division_id
+    ? departments.filter(d => d.division_id.toString() === formData.division_id)
+    : departments;
 
   const fetchAllData = async () => {
     setIsLoading(true);
@@ -98,28 +116,35 @@ export default function PegawaiPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const requiredFields = ['employee_id', 'full_name', 'email', 'division_id', 'department_id', 'position_id', 'role'];
-    const isCreateMode = !isEditMode;
-    
+
+    const requiredFields = ['full_name', 'email', 'division_id', 'department_id', 'position_id'];
+
     if (requiredFields.some(field => !formData[field as keyof typeof formData])) {
-      setError(isCreateMode ? "Semua field wajib diisi." : "Field password boleh kosong.");
-      return;
-    }
-    if (isCreateMode && !formData.password_hash) {
-      setError("Password wajib diisi untuk pegawai baru.");
+      setError("Semua field wajib diisi.");
       return;
     }
 
+    await saveUser();
+  };
+
+  const saveUser = async () => {
     setIsSubmitting(true);
     setError("");
 
+    // Auto-generate employee_id if not provided
+    const employeeId = formData.employee_id || String(Math.floor(Math.random() * 900) + 1).padStart(3, '0');
+    const role = formData.role || 'general';
+    const password = formData.password_hash || 'default123';
+
     const url = isEditMode ? `/api/admin/users/${editId}` : '/api/admin/users';
     const method = isEditMode ? 'PUT' : 'POST';
-    
-    const body = { ...formData };
-    if (isEditMode && !body.password_hash) {
-      delete body.password_hash;
-    }
+
+    const body = {
+      ...formData,
+      employee_id: employeeId,
+      role: role,
+      password_hash: password
+    };
 
     try {
       const response = await fetch(url, {
@@ -135,7 +160,8 @@ export default function PegawaiPage() {
       await fetchAllData();
       handleCloseModal();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -147,9 +173,9 @@ export default function PegawaiPage() {
       full_name: user.full_name,
       email: user.email,
       password_hash: "",
-      division_id: user.division_id.toString(),
-      department_id: user.department_id.toString(),
-      position_id: user.position_id.toString(),
+      division_id: user.division_id?.toString() || "",
+      department_id: user.department_id?.toString() || "",
+      position_id: user.position_id?.toString() || "",
       role: user.role,
     });
     setEditId(user.id);
@@ -158,20 +184,43 @@ export default function PegawaiPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus pegawai ini?")) return;
+    setEditId(id);
+    setIsConfirmModalOpen(true);
+  };
+
+  const performDelete = async () => {
+    if (!editId) return;
+
+    setIsSubmitting(true);
+    setConfirmError("");
+
+    if (!confirmPassword.password || !confirmPassword.confirmPassword) {
+      setConfirmError("Kedua field password harus diisi!");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (confirmPassword.password !== confirmPassword.confirmPassword) {
+      setConfirmError("Password dan Konfirmasi Password tidak sama!");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
-      const response = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/admin/users/${editId}`, { method: 'DELETE' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Gagal menghapus pegawai');
 
       alert('Pegawai berhasil dihapus!');
       await fetchAllData();
+      handleCloseConfirmModal();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Gagal menghapus pegawai');
+      setConfirmError(err instanceof Error ? err.message : 'Gagal menghapus pegawai');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
+
   const handleToggleStatus = async (user: User) => {
     try {
       const response = await fetch(`/api/admin/users/${user.id}`, {
@@ -192,6 +241,20 @@ export default function PegawaiPage() {
     setEditId(null);
     setFormData({ employee_id: "", full_name: "", email: "", password_hash: "", division_id: "", department_id: "", position_id: "", role: "" });
     setError("");
+    setIsSubmitting(false);
+    setIsDivisionOpen(false);
+    setIsDepartmentOpen(false);
+    setIsPositionOpen(false);
+  };
+
+  const handleCloseConfirmModal = () => {
+    setIsConfirmModalOpen(false);
+    setConfirmPassword({
+      password: "",
+      confirmPassword: "",
+    });
+    setConfirmError("");
+    setEditId(null);
   };
 
   const filteredUsers = users.filter(u =>
@@ -229,38 +292,38 @@ export default function PegawaiPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-[#205d7d] text-white">
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">ID Pegawai</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left rounded-tl-lg">ID Pegawai</th>
                       <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Nama Lengkap</th>
                       <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Email</th>
                       <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Divisi</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Departemen</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Jabatan</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center">Status</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center">Aksi</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Departmen</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center rounded-tr-lg">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{user.employee_id}</td>
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{user.full_name}</td>
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{user.email}</td>
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{user.division_name}</td>
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{user.department_name}</td>
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{user.position_name}</td>
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => handleToggleStatus(user)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${user.is_active ? "bg-green-500" : "bg-red-500"}`}>
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${user.is_active ? "translate-x-6" : "translate-x-1"}`} />
-                          </button>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleEdit(user)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Pencil size={18} /></button>
-                            <button onClick={() => handleDelete(user.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={18} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredUsers.length === 0 ? (
+                      <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">Tidak ada data pegawai</td></tr>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{user.employee_id}</td>
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{user.full_name}</td>
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{user.email}</td>
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{user.division_name}</td>
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{user.department_name}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <button onClick={() => handleEdit(user)} className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors" title="Edit">
+                                <Pencil size={18} />
+                              </button>
+                              <button onClick={() => handleDelete(user.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -272,31 +335,278 @@ export default function PegawaiPage() {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[25px] w-full max-w-2xl p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onClick={handleCloseModal} className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg"><X size={24} className="text-gray-500" /></button>
-            <h2 className="font-['Poppins'] font-semibold text-2xl mb-6">{isEditMode ? "Edit Pegawai" : "Tambah Pegawai"}</h2>
+          <div className="bg-white rounded-[25px] w-full max-w-md p-8 shadow-2xl relative">
+            <button onClick={handleCloseModal} className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg">
+              <X size={24} className="text-gray-500" />
+            </button>
+            <h2 className="font-['Poppins'] font-semibold text-xl text-[#205d7d] mb-6 text-center">{isEditMode ? "Edit Pegawai" : "Tambah Pegawai"}</h2>
+            {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">{error}</div>}
             <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label className="block font-['Poppins'] text-sm font-medium text-[#1e1e1e] mb-2">ID Pegawai <span className="text-red-500">*</span></label><input type="text" value={formData.employee_id} onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })} className="w-full h-12 px-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9]" required disabled={isSubmitting} /></div>
-                <div><label className="block font-['Poppins'] text-sm font-medium text-[#1e1e1e] mb-2">Nama Lengkap <span className="text-red-500">*</span></label><input type="text" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} className="w-full h-12 px-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9]" required disabled={isSubmitting} /></div>
-                <div className="md:col-span-2"><label className="block font-['Poppins'] text-sm font-medium text-[#1e1e1e] mb-2">Email <span className="text-red-500">*</span></label><input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full h-12 px-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9]" required disabled={isSubmitting} /></div>
-                <div><label className="block font-['Poppins'] text-sm font-medium text-[#1e1e1e] mb-2">Divisi <span className="text-red-500">*</span></label><select value={formData.division_id} onChange={(e) => setFormData({ ...formData, division_id: e.target.value })} className="w-full h-12 px-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] bg-white" required disabled={isSubmitting}><option value="">Pilih Divisi</option>{divisions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
-                <div><label className="block font-['Poppins'] text-sm font-medium text-[#1e1e1e] mb-2">Departemen <span className="text-red-500">*</span></label><select value={formData.department_id} onChange={(e) => setFormData({ ...formData, department_id: e.target.value })} className="w-full h-12 px-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] bg-white" required disabled={isSubmitting}><option value="">Pilih Departemen</option>{departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
-                <div><label className="block font-['Poppins'] text-sm font-medium text-[#1e1e1e] mb-2">Jabatan <span className="text-red-500">*</span></label><select value={formData.position_id} onChange={(e) => setFormData({ ...formData, position_id: e.target.value })} className="w-full h-12 px-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] bg-white" required disabled={isSubmitting}><option value="">Pilih Jabatan</option>{positions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-                <div><label className="block font-['Poppins'] text-sm font-medium text-[#1e1e1e] mb-2">Role <span className="text-red-500">*</span></label><select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} className="w-full h-12 px-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] bg-white" required disabled={isSubmitting}><option value="">Pilih Role</option>{roleOptions.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
-                <div className="md:col-span-2">
-                  <label className="block font-['Poppins'] text-sm font-medium text-[#1e1e1e] mb-2">Password {isEditMode && <span className="font-normal text-gray-500">(Kosongkan jika tidak ingin diubah)</span>} {!isEditMode && <span className="text-red-500">*</span>}</label>
-                  <input type="password" value={formData.password_hash} onChange={(e) => setFormData({ ...formData, password_hash: e.target.value })} className="w-full h-12 px-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9]" required={!isEditMode} disabled={isSubmitting} />
+              <div className="space-y-4">
+                {isEditMode && (
+                  <div>
+                    <input
+                      type="text"
+                      value={formData.employee_id}
+                      onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
+                      placeholder="ID Pegawai"
+                      className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9] bg-gray-100"
+                      disabled
+                    />
+                  </div>
+                )}
+                <div>
+                  <input
+                    type="text"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    placeholder="Nama lengkap pegawai"
+                    className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Email"
+                    className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                {/* Custom Dropdown Divisi */}
+                <div className="relative">
+                  <div
+                    onClick={() => !isSubmitting && setIsDivisionOpen(!isDivisionOpen)}
+                    className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm text-gray-500 focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9] bg-white cursor-pointer flex items-center justify-between hover:border-[#4180a9] transition-colors"
+                  >
+                    <span className={formData.division_id ? "text-gray-900" : "text-gray-500"}>
+                      {formData.division_id ? divisions.find(d => d.id.toString() === formData.division_id)?.name : "Divisi"}
+                    </span>
+                    <svg className={`fill-current h-4 w-4 text-gray-400 transition-transform ${isDivisionOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                    </svg>
+                  </div>
+                  {isDivisionOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setIsDivisionOpen(false)}></div>
+                      <div className="division-dropdown absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-[15px] shadow-[0_4px_20px_rgba(0,0,0,0.12)] max-h-48 overflow-y-auto">
+                        {divisions.map((d, index) => (
+                          <div
+                            key={d.id}
+                            onClick={() => {
+                              setFormData({ ...formData, division_id: d.id.toString(), department_id: "" });
+                              setIsDivisionOpen(false);
+                            }}
+                            className={`px-4 py-3 hover:bg-[#f0f7ff] cursor-pointer font-['Poppins'] text-sm text-gray-700 transition-colors ${
+                              index === 0 ? 'rounded-t-[15px]' : ''
+                            } ${
+                              index === divisions.length - 1 ? 'rounded-b-[15px]' : 'border-b border-gray-100'
+                            }`}
+                          >
+                            {d.name}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {/* Custom Dropdown Departemen */}
+                <div className="relative">
+                  <div
+                    onClick={() => !isSubmitting && formData.division_id && setIsDepartmentOpen(!isDepartmentOpen)}
+                    className={`w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm text-gray-500 focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9] bg-white flex items-center justify-between transition-colors ${
+                      formData.division_id ? 'cursor-pointer hover:border-[#4180a9]' : 'cursor-not-allowed opacity-60'
+                    }`}
+                  >
+                    <span className={formData.department_id ? "text-gray-900" : "text-gray-500"}>
+                      {formData.department_id ? filteredDepartments.find(d => d.id.toString() === formData.department_id)?.name : "Departemen"}
+                    </span>
+                    <svg className={`fill-current h-4 w-4 text-gray-400 transition-transform ${isDepartmentOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                    </svg>
+                  </div>
+                  {isDepartmentOpen && formData.division_id && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setIsDepartmentOpen(false)}></div>
+                      <div className="department-dropdown absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-[15px] shadow-[0_4px_20px_rgba(0,0,0,0.12)] max-h-48 overflow-y-auto">
+                        {filteredDepartments.length > 0 ? (
+                          filteredDepartments.map((d, index) => (
+                            <div
+                              key={d.id}
+                              onClick={() => {
+                                setFormData({ ...formData, department_id: d.id.toString() });
+                                setIsDepartmentOpen(false);
+                              }}
+                              className={`px-4 py-3 hover:bg-[#f0f7ff] cursor-pointer font-['Poppins'] text-sm text-gray-700 transition-colors ${
+                                index === 0 ? 'rounded-t-[15px]' : ''
+                              } ${
+                                index === filteredDepartments.length - 1 ? 'rounded-b-[15px]' : 'border-b border-gray-100'
+                              }`}
+                            >
+                              {d.name}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-4 py-3 text-center text-gray-500 font-['Poppins'] text-sm">
+                            Tidak ada departemen untuk divisi ini
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {/* Custom Dropdown Jabatan */}
+                <div className="relative">
+                  <div
+                    onClick={() => !isSubmitting && setIsPositionOpen(!isPositionOpen)}
+                    className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm text-gray-500 focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9] bg-white cursor-pointer flex items-center justify-between hover:border-[#4180a9] transition-colors"
+                  >
+                    <span className={formData.position_id ? "text-gray-900" : "text-gray-500"}>
+                      {formData.position_id ? positions.find(p => p.id.toString() === formData.position_id)?.name : "Jabatan"}
+                    </span>
+                    <svg className={`fill-current h-4 w-4 text-gray-400 transition-transform ${isPositionOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                    </svg>
+                  </div>
+                  {isPositionOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setIsPositionOpen(false)}></div>
+                      <div className="position-dropdown absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-[15px] shadow-[0_4px_20px_rgba(0,0,0,0.12)] max-h-48 overflow-y-auto">
+                        {positions.map((p, index) => (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              setFormData({ ...formData, position_id: p.id.toString() });
+                              setIsPositionOpen(false);
+                            }}
+                            className={`px-4 py-3 hover:bg-[#f0f7ff] cursor-pointer font-['Poppins'] text-sm text-gray-700 transition-colors ${
+                              index === 0 ? 'rounded-t-[15px]' : ''
+                            } ${
+                              index === positions.length - 1 ? 'rounded-b-[15px]' : 'border-b border-gray-100'
+                            }`}
+                          >
+                            {p.name}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
-              <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
-                <button type="button" onClick={handleCloseModal} className="flex-1 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-gray-50" disabled={isSubmitting}>Batal</button>
-                <button type="submit" className="flex-1 px-6 py-2.5 bg-[#4180a9] text-white rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-[#356890] disabled:opacity-50" disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : (isEditMode ? "Simpan Perubahan" : "Tambah Pegawai")}</button>
-              </div>
+              <button
+                type="submit"
+                className="w-full h-12 bg-[#4180a9] text-white rounded-full font-['Poppins'] font-medium text-sm hover:bg-[#356890] disabled:opacity-50 mt-6"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Tambah')}
+              </button>
             </form>
           </div>
         </div>
       )}
+
+      {/* Modal Konfirmasi Password untuk Delete */}
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md p-8 shadow-2xl relative">
+            <button onClick={handleCloseConfirmModal} className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg" disabled={isSubmitting}>
+              <X size={24} className="text-gray-500" />
+            </button>
+
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-orange-500 text-3xl font-bold">!</span>
+              </div>
+              <h2 className="font-['Poppins'] font-bold text-2xl text-gray-900 text-center">
+                Konfirmasi Persetujuan
+              </h2>
+            </div>
+
+            <p className="font-['Poppins'] text-sm text-gray-600 text-center mb-6">
+              Demi keamanan, setiap aksi penghapusan memerlukan verifikasi akun.
+              Masukkan password sebelum melanjutkan proses
+            </p>
+
+            {confirmError && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                {confirmError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block font-['Poppins'] text-sm font-medium text-gray-700 mb-1">
+                  Password <span className="text-red-600">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword.password}
+                    onChange={(e) => setConfirmPassword({ ...confirmPassword, password: e.target.value })}
+                    placeholder="Masukan Password..."
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg font-['Poppins'] text-sm focus:outline-none focus:ring-2 focus:ring-[#4180a9] focus:border-transparent"
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    disabled={isSubmitting}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-['Poppins'] text-sm font-medium text-gray-700 mb-1">
+                  Konfirmasi Password <span className="text-red-600">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword.confirmPassword}
+                    onChange={(e) => setConfirmPassword({ ...confirmPassword, confirmPassword: e.target.value })}
+                    placeholder="Konfirmasi password anda..."
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg font-['Poppins'] text-sm focus:outline-none focus:ring-2 focus:ring-[#4180a9] focus:border-transparent"
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    disabled={isSubmitting}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={handleCloseConfirmModal}
+                  disabled={isSubmitting}
+                  className="flex-1 px-6 py-3 bg-gray-500 text-white rounded-full font-['Poppins'] font-medium hover:bg-gray-600 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={performDelete}
+                  disabled={isSubmitting}
+                  className="flex-1 px-6 py-3 bg-green-500 text-white rounded-full font-['Poppins'] font-medium hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Memproses...' : 'Submit'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

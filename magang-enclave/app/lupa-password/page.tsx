@@ -38,7 +38,7 @@ export default function LupaPasswordPage() {
       }
 
       setSuccess(true);
-      
+
       // Redirect ke halaman reset password setelah 2 detik
       setTimeout(() => {
         router.push(`/reset-password?email=${encodeURIComponent(email)}&tenant=${encodeURIComponent(tenantName)}`);

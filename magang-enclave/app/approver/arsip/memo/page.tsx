@@ -2,27 +2,16 @@
 
 import { useState } from "react";
 import Sidebar from "@/app/components/sidebar-approver";
-import { Menu, Search, Calendar, Download, X } from "lucide-react";
+import { Menu, Search, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-interface MemoData {
-  no: number;
-  noMemo: string;
-  tanggalMemo: string;
-  kategori: string;
-  tujuan: string;
-  perihal: string;
-}
-
-export default function ArsipMemoPage() {
+export default function SuratMasukPage() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("memo");
+  const [activeTab, setActiveTab] = useState("surat-masuk");
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [tooltipContent, setTooltipContent] = useState<string | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
 
   const tabs = [
     { id: "surat-masuk", label: "Surat Masuk", path: "/approver/arsip/surat-masuk" },
@@ -31,17 +20,25 @@ export default function ArsipMemoPage() {
     { id: "notulensi", label: "Notulensi", path: "/approver/arsip/notulensi" },
   ];
 
-  const allData: MemoData[] = [
-    { no: 1, noMemo: "M-001/2025", tanggalMemo: "2025-11-15", kategori: "Internal", tujuan: "Dept. Pengembangan Organisasi", perihal: "Rapat Koordinasi" },
-    { no: 2, noMemo: "M-002/2025", tanggalMemo: "2025-11-16", kategori: "Internal", tujuan: "Dept. Keuangan", perihal: "Laporan Keuangan Bulanan" },
-    { no: 3, noMemo: "M-003/2025", tanggalMemo: "2025-10-20", kategori: "Internal", tujuan: "Dept. Pengembangan Teknologi & Informasi", perihal: "Update Website" },
-    { no: 4, noMemo: "M-004/2025", tanggalMemo: "2025-10-21", kategori: "Internal", tujuan: "Dept. Hubungan Internal", perihal: "Koordinasi Antar Departemen" },
-    { no: 5, noMemo: "M-005/2025", tanggalMemo: "2025-09-15", kategori: "Eksternal", tujuan: "Dept. Media Informasi", perihal: "Publikasi Kegiatan" },
-    { no: 6, noMemo: "M-006/2025", tanggalMemo: "2025-09-16", kategori: "Internal", tujuan: "Dept. Ketertiban Internal", perihal: "Evaluasi Kedisiplinan" },
-    { no: 7, noMemo: "M-007/2025", tanggalMemo: "2025-08-10", kategori: "Eksternal", tujuan: "Dept. Hubungan Eksternal", perihal: "Kerjasama Instansi" },
-    { no: 8, noMemo: "M-008/2025", tanggalMemo: "2025-08-11", kategori: "Internal", tujuan: "Dept. Kewirausahaan", perihal: "Program Business Plan" },
-    { no: 9, noMemo: "M-009/2025", tanggalMemo: "2025-07-15", kategori: "Internal", tujuan: "Dept. Sosial", perihal: "Kegiatan Bakti Sosial" },
-    { no: 10, noMemo: "M-010/2025", tanggalMemo: "2025-07-16", kategori: "Internal", tujuan: "Dept. Minat Bakat", perihal: "Workshop & Pelatihan" },
+  const handleTabClick = (tabId: string, path: string) => {
+    setActiveTab(tabId);
+    router.push(path);
+  };
+
+  const allData = [
+    { no: 1, namaSurat: "Surat Kerjasama", nomorSurat: "01/SM/12/2025", pengirim: "PT. Mitra Sejahtera", penerima: "Departemen Hubungan Eksternal", tanggal: "2025-12-12", status: "Ditolak", statusColor: "#EF4444" },
+    { no: 2, namaSurat: "Surat Permohonan", nomorSurat: "02/SM/12/2025", pengirim: "Universitas Indonesia", penerima: "Departemen Kelimuan", tanggal: "2025-12-11", status: "Diproses", statusColor: "#FFBD66" },
+    { no: 3, namaSurat: "Surat Peminjaman Dana", nomorSurat: "03/SM/12/2025", pengirim: "BEM FT", penerima: "Departemen Keuangan", tanggal: "2025-12-10", status: "Selesai", statusColor: "#56F2A7" },
+    { no: 4, namaSurat: "Surat Undangan", nomorSurat: "04/SM/12/2025", pengirim: "Himpunan Mahasiswa", penerima: "Departemen Hubungan Internal", tanggal: "2025-12-09", status: "Ditolak", statusColor: "#EF4444" },
+    { no: 5, namaSurat: "Surat Pemberitahuan", nomorSurat: "05/SM/12/2025", pengirim: "Fakultas Teknik", penerima: "Departemen Media Informasi", tanggal: "2025-12-08", status: "Diproses", statusColor: "#FFBD66" },
+    { no: 6, namaSurat: "Surat Izin Kegiatan", nomorSurat: "06/SM/12/2025", pengirim: "Dekanat", penerima: "Departemen Pengembangan Organisasi", tanggal: "2025-12-07", status: "Selesai", statusColor: "#56F2A7" },
+    { no: 7, namaSurat: "Surat Sponsorship", nomorSurat: "07/SM/12/2025", pengirim: "PT. Tech Innovation", penerima: "Departemen Kewirausahaan", tanggal: "2025-12-06", status: "Ditolak", statusColor: "#EF4444" },
+    { no: 8, namaSurat: "Surat Kerjasama Akademik", nomorSurat: "08/SM/12/2025", pengirim: "Institut Teknologi", penerima: "Departemen Keprofesian", tanggal: "2025-12-05", status: "Diproses", statusColor: "#FFBD66" },
+    { no: 9, namaSurat: "Surat Permohonan Data", nomorSurat: "09/SM/12/2025", pengirim: "Lembaga Penelitian", penerima: "Departemen Pengembangan Teknologi & Informasi", tanggal: "2025-12-04", status: "Selesai", statusColor: "#56F2A7" },
+    { no: 10, namaSurat: "Surat Kegiatan Sosial", nomorSurat: "10/SM/12/2025", pengirim: "PMI Cabang", penerima: "Departemen Sosial", tanggal: "2025-12-03", status: "Ditolak", statusColor: "#EF4444" },
+    { no: 11, namaSurat: "Surat Workshop", nomorSurat: "11/SM/12/2025", pengirim: "Komunitas Developer", penerima: "Departemen Minat Bakat", tanggal: "2025-12-02", status: "Diproses", statusColor: "#FFBD66" },
+    { no: 12, namaSurat: "Surat Audit Internal", nomorSurat: "12/SM/12/2025", pengirim: "Unit Audit Internal", penerima: "Departemen Ketertiban Internal", tanggal: "2025-12-01", status: "Selesai", statusColor: "#56F2A7" },
+    { no: 13, namaSurat: "Surat Pemberitahuan", nomorSurat: "13/SM/12/2025", pengirim: "Rektorat", penerima: "Departemen Hubungan Eksternal", tanggal: "2025-11-30", status: "Ditolak", statusColor: "#EF4444" },
   ];
 
   const formatDate = (dateStr: string) => {
@@ -51,15 +48,16 @@ export default function ArsipMemoPage() {
   };
 
   const filteredData = allData.filter(item => {
-    const matchSearch = !searchQuery || 
-      item.noMemo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.kategori.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tujuan.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.perihal.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchSearch = !searchQuery ||
+      item.namaSurat.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.nomorSurat.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.pengirim.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.penerima.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.status.toLowerCase().includes(searchQuery.toLowerCase());
 
     let matchDate = true;
     if (startDate && endDate) {
-      const itemDate = new Date(item.tanggalMemo);
+      const itemDate = new Date(item.tanggal);
       const start = new Date(startDate);
       const end = new Date(endDate);
       matchDate = itemDate >= start && itemDate <= end;
@@ -68,37 +66,30 @@ export default function ArsipMemoPage() {
     return matchSearch && matchDate;
   });
 
-  const truncateText = (text: string, maxLength: number = 30) => {
-    if (text.length > maxLength) {
-      return text.substring(0, maxLength) + "..";
-    }
-    return text;
-  };
+  const handleDownloadRow = (row: any) => {
+    const headers = ["No", "Nama Surat", "Nomor Surat", "Pengirim", "Penerima", "Tanggal", "Status"];
+    const csvContent = [
+      headers.join(","),
+      [
+        row.no,
+        `"${row.namaSurat}"`,
+        row.nomorSurat,
+        `"${row.pengirim}"`,
+        `"${row.penerima}"`,
+        formatDate(row.tanggal),
+        row.status
+      ].join(",")
+    ].join("\n");
 
-  const handleTextClick = (fullText: string, event: React.MouseEvent<HTMLSpanElement>) => {
-    if (fullText.length > 30) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      setTooltipPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top - 10
-      });
-      setTooltipContent(fullText);
-    }
-  };
-
-  const closeTooltip = () => {
-    setTooltipContent(null);
-    setTooltipPosition(null);
-  };
-
-  const handleTabClick = (tabId: string, path: string) => {
-    setActiveTab(tabId);
-    router.push(path);
-  };
-
-  const handleDownload = (row: MemoData) => {
-    console.log("Download:", row);
-    alert(`Download memo ${row.noMemo}`);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${row.nomorSurat.replace(/\//g, '-')}_${new Date().getTime()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -109,6 +100,7 @@ export default function ArsipMemoPage() {
       />
 
       <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-[269px]' : 'lg:ml-0'}`}>
+        {/* Header with Menu Button */}
         <div className="sticky top-0 z-30 bg-gray-50 py-4 px-6 lg:px-10">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -118,117 +110,132 @@ export default function ArsipMemoPage() {
           </button>
         </div>
 
-        <div className="px-6 lg:px-10 pb-10">
+        {/* Main Content */}
+        <main className="px-6 lg:px-10 pb-10">
+          {/* Page Title */}
           <div className="mb-6 md:mb-8">
             <h1 className="font-['Poppins'] font-medium text-[#1e1e1e] text-3xl md:text-[40px]">
-              Arsip
+              Daftar Surat
             </h1>
           </div>
 
+          {/* Content Card */}
           <div className="bg-white rounded-[25px] shadow-[0px_0px_15px_0px_rgba(0,0,0,0.15)] p-6 md:p-8">
+            {/* Tabs */}
             <div className="flex gap-4 md:gap-8 mb-6 border-b border-gray-200 overflow-x-auto">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => handleTabClick(tab.id, tab.path)}
-                  className={`font-['Poppins'] text-sm md:text-base pb-3 px-2 whitespace-nowrap transition-colors relative ${
+                  className={`font-['Poppins'] text-sm md:text-base pb-3 px-2 whitespace-nowrap transition-colors ${
                     activeTab === tab.id
-                      ? "text-[#4180a9] font-semibold"
-                      : "text-gray-500 font-normal hover:text-gray-700"
+                      ? "text-[#4180a9] font-semibold border-b-2 border-[#4180a9]"
+                      : "text-gray-500 font-normal"
                   }`}
                 >
                   {tab.label}
-                  {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4180a9]" />
-                  )}
                 </button>
               ))}
             </div>
 
+            {/* Search and Date Filter */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
+              {/* Search Bar */}
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari memo, no memo, kategori, tujuan ..."
+                  placeholder="Cari surat, no surat ..."
                   className="w-full h-12 pl-12 pr-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
                 />
               </div>
 
-              <div className="flex items-center gap-2 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[280px]">
+              {/* Date Range Picker */}
+              <div className="flex items-center gap-3 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[300px]">
                 <input
-                  type="date"
-                  value={startDate}
+                  type="date" value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="font-['Poppins'] text-sm focus:outline-none"
+                  min="1900-01-01"
+                  max="2999-12-31"
+                  className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1"
                 />
-                <span className="text-gray-400">-</span>
+                <span className="text-gray-400 font-medium">-</span>
                 <input
-                  type="date"
-                  value={endDate}
+                  type="date" value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="font-['Poppins'] text-sm focus:outline-none"
+                  min="1900-01-01"
+                  max="2999-12-31"
+                  className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1"
                 />
-                <Calendar size={20} className="text-gray-400 flex-shrink-0" />
               </div>
             </div>
 
+            {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="w-full">
                 <thead>
-                  <tr className="bg-[#205d7d]">
-                    <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white rounded-tl-[10px] min-w-[60px]">No</th>
-                    <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[120px]">No Memo</th>
-                    <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[120px]">Tanggal Memo</th>
-                    <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[100px]">Kategori</th>
-                    <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[200px]">Tujuan</th>
-                    <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-left text-white min-w-[150px]">Perihal</th>
-                    <th className="font-['Poppins'] font-medium text-sm py-4 px-4 text-center text-white rounded-tr-[10px] min-w-[140px]">Action</th>
+                  <tr className="bg-[#205d7d] text-white">
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center rounded-tl-[10px] w-12">
+                      No
+                    </th>
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
+                      Nama Surat
+                    </th>
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
+                      Nomor surat
+                    </th>
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
+                      Pengirim
+                    </th>
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
+                      Penerima
+                    </th>
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
+                      Tanggal
+                    </th>
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center rounded-tr-[10px]">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredData.length > 0 ? (
-                    filteredData.map((row, index) => (
-                      <tr 
-                        key={index} 
-                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                        }`}
-                      >
-                        <td className="font-['Poppins'] text-sm py-4 px-4 text-gray-900">{row.no}</td>
-                        <td className="font-['Poppins'] text-sm py-4 px-4 text-gray-900">{row.noMemo}</td>
-                        <td className="font-['Poppins'] text-sm py-4 px-4 text-gray-900">{formatDate(row.tanggalMemo)}</td>
-                        <td className="font-['Poppins'] text-sm py-4 px-4 text-gray-900">{row.kategori}</td>
-                        <td className="font-['Poppins'] text-sm py-4 px-4 text-gray-900">
-                          <span
-                            onClick={(e) => handleTextClick(row.tujuan, e)}
-                            className={row.tujuan.length > 30 ? "cursor-pointer hover:text-[#4180a9] transition-colors" : ""}
-                          >
-                            {truncateText(row.tujuan)}
-                          </span>
-                        </td>
-                        <td className="font-['Poppins'] text-sm py-4 px-4 text-gray-900">
-                          <span
-                            onClick={(e) => handleTextClick(row.perihal, e)}
-                            className={row.perihal.length > 30 ? "cursor-pointer hover:text-[#4180a9] transition-colors" : ""}
-                          >
-                            {truncateText(row.perihal)}
-                          </span>
-                        </td>
-                        <td className="font-['Poppins'] text-sm py-4 px-4 text-center">
-                          <button 
-                            onClick={() => handleDownload(row)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#4180a9] text-white rounded-lg hover:bg-[#356890] transition-colors"
-                          >
-                            <Download size={16} />
-                            <span className="text-sm">Download</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
+                  {filteredData.length > 0 ? filteredData.map((row, index) => (
+                    <tr
+                      key={index}
+                      onClick={() => router.push(`/approver/memo?id=${row.no}`)}
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
+                        {row.no}
+                      </td>
+                      <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
+                        {row.namaSurat}
+                      </td>
+                      <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
+                        {row.nomorSurat}
+                      </td>
+                      <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
+                        {row.pengirim}
+                      </td>
+                      <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
+                        {row.penerima}
+                      </td>
+                      <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
+                        {formatDate(row.tanggal)}
+                      </td>
+                      <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDownloadRow(row); }}
+                          className="bg-[#4180a9] text-white px-3 py-1.5 rounded-lg hover:bg-[#2f5f7f] transition-colors flex items-center gap-1.5 mx-auto"
+                        >
+                          <Download size={14} />
+                          <span className="text-xs">Download</span>
+                        </button>
+                      </td>
+                    </tr>
+                  )) : (
                     <tr>
                       <td colSpan={7} className="py-8 text-center font-['Poppins'] text-sm text-gray-500">
                         Tidak ada data yang ditemukan
@@ -239,37 +246,11 @@ export default function ArsipMemoPage() {
               </table>
             </div>
           </div>
-        </div>
+        </main>
       </div>
-
-      {tooltipContent && tooltipPosition && (
-        <>
-          <div 
-            className="fixed inset-0 bg-black/20 z-40"
-            onClick={closeTooltip}
-          />
-          <div
-            className="fixed z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-xs"
-            style={{
-              left: `${tooltipPosition.x}px`,
-              top: `${tooltipPosition.y}px`,
-              transform: 'translate(-50%, -100%)',
-            }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <p className="font-['Poppins'] text-sm text-gray-900 break-words">
-                {tooltipContent}
-              </p>
-              <button
-                onClick={closeTooltip}
-                className="flex-shrink-0 p-1 hover:bg-gray-100 rounded transition-colors"
-              >
-                <X size={16} className="text-gray-500" />
-              </button>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
+
+
+

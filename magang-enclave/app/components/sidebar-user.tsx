@@ -1,54 +1,171 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from '@/lib/auth-context';
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, X, User } from "lucide-react";
-import { 
-  LayoutDashboard, 
-  Mail, 
-  Send, 
-  FileText, 
+import { Bell, X, User, Trash2 } from "lucide-react";
+import {
+  LayoutDashboard,
+  Mail,
+  Send,
+  FileText,
   Clipboard,
   List,
   Archive,
-  LogOut 
+  LogOut
 } from "lucide-react";
 
 interface Notification {
   id: number;
-  type: string;
+  userId: number;
   title: string;
   message: string;
-  date: string;
-  time: string;
+  type: string;
+  documentId: number | null;
   isRead: boolean;
-  status: string;
+  createdAt: string;
 }
 
 interface SidebarUserProps {
   isOpen: boolean;
   onToggle: () => void;
-  notifications?: Notification[];
-  onNotificationClick?: () => void;
 }
 
 export default function SidebarUser({
   isOpen,
   onToggle,
-  notifications = [],
-  onNotificationClick,
 }: SidebarUserProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedNotifications, setSelectedNotifications] = useState<number[]>([]);
+  const [filterToday, setFilterToday] = useState(false);
   const [imageError, setImageError] = useState({
     logo: false,
     avatar: false
   });
   const { user, isLoading, logout } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications');
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId: notification.id }),
+      });
+
+      setNotifications(prev =>
+        prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+
+    const typeRoutes: { [key: string]: string } = {
+      'surat-keluar': `/user/surat-keluar?id=${notification.documentId}`,
+      'surat-masuk': `/user/surat-masuk?id=${notification.documentId}`,
+      'memo': `/user/memo?id=${notification.documentId}`,
+      'notulensi': `/user/notulensi?id=${notification.documentId}`,
+    };
+
+    const route = typeRoutes[notification.type];
+    if (route) {
+      setIsNotificationOpen(false);
+      router.push(route);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedNotifications.length === 0) return;
+
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationIds: selectedNotifications }),
+      });
+
+      if (response.ok) {
+        await fetchNotifications();
+        setSelectedNotifications([]);
+      }
+    } catch (error) {
+      console.error('Failed to delete notifications:', error);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (notifications.length === 0) return;
+
+    if (confirm('Apakah Anda yakin ingin menghapus semua notifikasi?')) {
+      try {
+        const response = await fetch('/api/notifications', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deleteAll: true }),
+        });
+
+        if (response.ok) {
+          await fetchNotifications();
+          setSelectedNotifications([]);
+        }
+      } catch (error) {
+        console.error('Failed to delete all notifications:', error);
+      }
+    }
+  };
+
+  const toggleSelectNotification = (id: number) => {
+    setSelectedNotifications(prev =>
+      prev.includes(id)
+        ? prev.filter(nId => nId !== id)
+        : [...prev, id]
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Baru saja';
+    if (diffMins < 60) return `${diffMins} menit yang lalu`;
+    if (diffHours < 24) return `${diffHours} jam yang lalu`;
+    if (diffDays < 7) return `${diffDays} hari yang lalu`;
+
+    return date.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -58,7 +175,7 @@ export default function SidebarUser({
     if (!role) return '';
     return role.charAt(0).toUpperCase() + role.slice(1);
   };
-  
+
   return (
     <>
       {/* Mobile overlay */}
@@ -73,8 +190,8 @@ export default function SidebarUser({
       <div
         className={`
         fixed z-50
-        w-[269px] h-screen bg-white 
-        rounded-br-[25px] rounded-tr-[25px] 
+        w-[269px] h-screen bg-white
+        rounded-br-[25px] rounded-tr-[25px]
         shadow-[0px_0px_15px_0px_rgba(0,0,0,0.25)]
         transform transition-transform duration-300 ease-in-out
         flex flex-col
@@ -140,7 +257,7 @@ export default function SidebarUser({
                   {user?.fullName || 'User'}
                 </p>
               )}
-              
+
               {isLoading ? (
                 <p className="font-['Poppins'] font-light text-gray-400 text-[8px]">
                   Memuat...
@@ -156,8 +273,10 @@ export default function SidebarUser({
               className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
             >
               <Bell size={20} className="text-gray-700" />
-              {notifications.some((n) => !n.isRead) && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
               )}
             </button>
           </div>
@@ -258,7 +377,7 @@ export default function SidebarUser({
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/user/daftar-surat" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname.startsWith("/user/daftar-surat") ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <List size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -275,7 +394,7 @@ export default function SidebarUser({
             }}
             className={`
               w-full flex items-center gap-3 px-4 py-3 rounded-[10px] transition-colors
-              ${pathname === "/user/arsip" ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
+              ${pathname.startsWith("/user/arsip") ? "bg-[#bcdff6]" : "hover:bg-gray-50"}
             `}
           >
             <Archive size={20} className="text-[#1E1E1E] flex-shrink-0" />
@@ -321,48 +440,103 @@ export default function SidebarUser({
               </div>
 
               <div className="flex-1 overflow-y-auto p-4">
-                {notifications.length > 0 ? (
-                  <div className="space-y-3">
-                    {notifications.map((notification) => (
+                {notifications.length > 0 && (
+                  <div className="flex gap-2 mb-4 flex-wrap">
+                    <button
+                      onClick={() => setFilterToday(!filterToday)}
+                      className={`px-3 py-2 rounded-lg transition-colors text-sm font-['Poppins'] ${
+                        filterToday
+                          ? 'bg-blue-500 text-white hover:bg-blue-600'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {filterToday ? '\u2713 Hari Ini' : 'Hari Ini'}
+                    </button>
+                    <button
+                      onClick={handleDeleteSelected}
+                      disabled={selectedNotifications.length === 0}
+                      className="flex items-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-['Poppins']"
+                    >
+                      <Trash2 size={16} />
+                      Hapus Dipilih ({selectedNotifications.length})
+                    </button>
+                    <button
+                      onClick={handleDeleteAll}
+                      className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-['Poppins']"
+                    >
+                      <Trash2 size={16} />
+                      Hapus Semua
+                    </button>
+                  </div>
+                )}
+
+                {(() => {
+                  const filteredNotifications = filterToday
+                    ? notifications.filter(notif => {
+                        const notifDate = new Date(notif.createdAt);
+                        const today = new Date();
+                        return notifDate.toDateString() === today.toDateString();
+                      })
+                    : notifications;
+
+                  return filteredNotifications.length > 0 ? (
+                    <div className="space-y-3 max-h-[calc(100vh-320px)] overflow-y-auto pr-2">
+                      {filteredNotifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                        className={`p-4 rounded-lg border transition-all ${
                           notification.isRead
                             ? "bg-white border-gray-200"
                             : "bg-blue-50 border-blue-200"
                         }`}
-                        onClick={onNotificationClick}
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-['Poppins'] font-medium text-black text-sm">
-                            {notification.title}
-                          </h3>
-                          <span className="text-xs text-gray-500">
-                            {notification.time}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 font-['Poppins'] mb-2">
-                          {notification.message}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">
-                            {notification.date}
-                          </span>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-['Poppins'] ${
-                              notification.status === "pending"
-                                ? "bg-orange-100 text-orange-600"
-                                : notification.status === "approved"
-                                ? "bg-green-100 text-green-600"
-                                : "bg-blue-100 text-blue-600"
-                            }`}
+                        <div className="flex items-start gap-3">
+                          {/* Checkbox */}
+                          <input
+                            type="checkbox"
+                            checked={selectedNotifications.includes(notification.id)}
+                            onChange={() => toggleSelectNotification(notification.id)}
+                            className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+
+                          {/* Content */}
+                          <div
+                            className="flex-1 cursor-pointer"
+                            onClick={() => handleNotificationClick(notification)}
                           >
-                            {notification.status === "pending"
-                              ? "Menunggu"
-                              : notification.status === "approved"
-                              ? "Disetujui"
-                              : "Selesai"}
-                          </span>
+                            <div className="flex items-start justify-between mb-2">
+                              <h3 className="font-['Poppins'] font-medium text-black text-sm">
+                                {notification.title}
+                              </h3>
+                              <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                                {formatDate(notification.createdAt)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 font-['Poppins'] mb-2">
+                              {notification.message}
+                            </p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {notification.status && (
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-['Poppins'] ${
+                                    notification.status === "Ditolak"
+                                      ? "bg-red-100 text-red-600"
+                                      : notification.status === "Dalam Proses"
+                                      ? "bg-orange-100 text-orange-600"
+                                      : "bg-green-100 text-green-600"
+                                  }`}
+                                >
+                                  {notification.status}
+                                </span>
+                              )}
+                              {!notification.isRead && (
+                                <span className="px-2 py-1 rounded-full text-xs font-['Poppins'] bg-red-100 text-red-600">
+                                  Baru
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -370,9 +544,12 @@ export default function SidebarUser({
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-gray-400">
                     <Bell size={48} className="mb-2" />
-                    <p className="font-['Poppins']">Tidak ada notifikasi</p>
+                    <p className="font-['Poppins']">
+                      {filterToday ? 'Tidak ada notifikasi hari ini' : 'Tidak ada notifikasi'}
+                    </p>
                   </div>
-                )}
+                );
+                })()}
               </div>
             </div>
           </div>

@@ -7,8 +7,15 @@ export default function DaftarSuratPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/approver/daftar-surat/surat-masuk");
+    // Only redirect if on base path without subpath
+    if (typeof window !== 'undefined' && window.location.pathname === '/approver/daftar-surat') {
+      router.replace("/approver/daftar-surat/surat-masuk");
+    }
   }, [router]);
 
   return null;
 }
+
+
+
+

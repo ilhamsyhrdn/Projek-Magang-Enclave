@@ -57,6 +57,10 @@ export default function JabatanPage() {
       return;
     }
 
+    await savePosition();
+  };
+
+  const savePosition = async () => {
     setIsSubmitting(true);
     setError("");
 
@@ -77,16 +81,17 @@ export default function JabatanPage() {
       await fetchPositions();
       handleCloseModal();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleEdit = (position: Position) => {
-    setFormData({ 
-      name: position.name, 
-      level: position.level, 
+    setFormData({
+      name: position.name,
+      level: position.level,
       description: position.description
     });
     setEditId(position.id);
@@ -95,14 +100,16 @@ export default function JabatanPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus jabatan ini?")) return;
-
     try {
       const response = await fetch(`/api/admin/positions/${id}`, { method: 'DELETE' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Gagal menghapus jabatan');
 
-      alert('Jabatan berhasil dihapus!');
+      if (data.soft_deleted) {
+        alert('Jabatan tidak dapat dihapus karena masih digunakan, status diubah menjadi non-aktif.');
+      } else {
+        alert('Jabatan berhasil dihapus!');
+      }
       await fetchPositions();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal menghapus jabatan');
@@ -117,7 +124,15 @@ export default function JabatanPage() {
         body: JSON.stringify({ ...position, is_active: !position.is_active }),
       });
       if (!response.ok) throw new Error('Gagal mengubah status');
-      await fetchPositions();
+
+      // Update state lokal tanpa fetch ulang untuk mempertahankan urutan
+      setPositions(prevPositions =>
+        prevPositions.map(pos =>
+          pos.id === position.id
+            ? { ...pos, is_active: !pos.is_active }
+            : pos
+        )
+      );
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal mengubah status');
     }
@@ -129,6 +144,7 @@ export default function JabatanPage() {
     setEditId(null);
     setFormData({ name: "", level: "", description: "" });
     setError("");
+    setIsSubmitting(false);
   };
 
   const filteredPositions = positions.filter(p =>
@@ -150,7 +166,7 @@ export default function JabatanPage() {
 
         {/* Main Content */}
         <div className="px-6 lg:px-10 pb-10">
-          <h1 className="font-['Poppins'] font-medium text-[#1e1e1e] text-3xl md:text-[40px] mb-6 md:mb-8">Jabatan/Posisi</h1>
+          <h1 className="font-['Poppins'] font-medium text-[#1e1e1e] text-3xl md:text-[40px] mb-6 md:mb-8">Jabatan</h1>
 
           <div className="bg-white rounded-[25px] shadow-[0px_0px_15px_0px_rgba(0,0,0,0.15)] p-6 md:p-8">
             {/* Search & Tambah Button */}
@@ -174,35 +190,31 @@ export default function JabatanPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="px-4 py-3 text-left font-['Poppins'] font-semibold text-sm text-[#1e1e1e]">No</th>
-                      <th className="px-4 py-3 text-left font-['Poppins'] font-semibold text-sm text-[#1e1e1e]">Nama Jabatan</th>
-                      <th className="px-4 py-3 text-left font-['Poppins'] font-semibold text-sm text-[#1e1e1e]">Tingkat Jabatan</th>
-                      <th className="px-4 py-3 text-left font-['Poppins'] font-semibold text-sm text-[#1e1e1e]">Deskripsi</th>
-                      <th className="px-4 py-3 text-center font-['Poppins'] font-semibold text-sm text-[#1e1e1e]">Status</th>
-                      <th className="px-4 py-3 text-center font-['Poppins'] font-semibold text-sm text-[#1e1e1e]">Aksi</th>
+                    <tr className="bg-[#205d7d] text-white">
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left rounded-tl-lg">Jabatan</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center rounded-tr-lg">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredPositions.map((position, index) => (
-                      <tr key={position.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-4 py-4 font-['Poppins'] text-sm text-[#1e1e1e]">{index + 1}</td>
-                        <td className="px-4 py-4 font-['Poppins'] text-sm text-[#1e1e1e]">{position.name}</td>
-                        <td className="px-4 py-4 font-['Poppins'] text-sm text-[#1e1e1e]">{position.level}</td>
-                        <td className="px-4 py-4 font-['Poppins'] text-sm text-[#1e1e1e]">{position.description}</td>
-                        <td className="px-4 py-4 text-center">
-                          <button onClick={() => handleToggleStatus(position)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${position.is_active ? "bg-green-500" : "bg-red-500"}`}>
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${position.is_active ? "translate-x-6" : "translate-x-1"}`} />
-                          </button>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleEdit(position)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Pencil size={18} /></button>
-                            <button onClick={() => handleDelete(position.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={18} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredPositions.length === 0 ? (
+                      <tr><td colSpan={2} className="px-4 py-8 text-center text-gray-500">Tidak ada data jabatan</td></tr>
+                    ) : (
+                      filteredPositions.map((position) => (
+                        <tr key={position.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{position.name}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <button onClick={() => handleEdit(position)} className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors" title="Edit">
+                                <Pencil size={18} />
+                              </button>
+                              <button onClick={() => handleDelete(position.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -239,7 +251,7 @@ export default function JabatanPage() {
               </div>
               <div className="flex gap-4 mt-6">
                 <button type="button" onClick={handleCloseModal} className="flex-1 h-12 border border-gray-300 text-gray-700 rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-gray-50" disabled={isSubmitting}>Batal</button>
-                <button type="submit" className="flex-1 h-12 bg-[#4180a9] text-white rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-[#356890] disabled:opacity-50" disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Update' : 'Simpan')}</button>
+                <button type="submit" className="flex-1 h-12 bg-[#4180a9] text-white rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-[#356890] disabled:opacity-50" disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Simpan')}</button>
               </div>
             </form>
           </div>

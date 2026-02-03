@@ -16,6 +16,34 @@ export async function GET(request: NextRequest) {
 
     const payload = verifyToken(token);
 
+    // HARDCODED TEST ACCOUNTS VERIFICATION
+    const testAccounts = [
+      { userId: 0, email: 'superadmin@superadmin.com', role: 'superadmin', name: 'Super Administrator', tenantName: 'superadmin', employeeId: 'SUPERADMIN' },
+      { userId: 1001, email: 'himatif@admin.com', role: 'admin', name: 'Admin Himatif', tenantName: 'himatif', employeeId: 'ADM001' },
+      { userId: 2001, email: 'ilham@mail.com', role: 'approver', name: 'Ilham', tenantName: 'himatif', employeeId: 'APP001' },
+      { userId: 2002, email: 'rayhan@mail.com', role: 'approver', name: 'Rayhan', tenantName: 'himatif', employeeId: 'APP002' },
+      { userId: 2003, email: 'candra@mail.com', role: 'approver', name: 'Candra', tenantName: 'himatif', employeeId: 'APP003' },
+      { userId: 2004, email: 'direktur@mail.com', role: 'direktur', name: 'Direktur', tenantName: 'himatif', employeeId: 'DIR001' },
+      { userId: 3001, email: 'pegawai@mail.com', role: 'general', name: 'Pegawai', tenantName: 'himatif', employeeId: 'EMP001' },
+      { userId: 4001, email: 'adk@mail.com', role: 'adk', name: 'ADK User', tenantName: 'himatif', employeeId: 'ADK001' },
+    ];
+
+    const testAccount = testAccounts.find(acc => acc.email === payload.email);
+    
+    if (testAccount) {
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: testAccount.userId,
+          email: testAccount.email,
+          fullName: testAccount.name,
+          tenantName: testAccount.tenantName,
+          role: testAccount.role,
+          employeeId: testAccount.employeeId,
+        },
+      });
+    }
+
     if (payload.role === 'superadmin' && payload.userId === 0) {
       return NextResponse.json({
         success: true,

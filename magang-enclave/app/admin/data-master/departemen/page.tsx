@@ -69,6 +69,10 @@ export default function DepartemenPage() {
       return;
     }
 
+    await saveDepartment();
+  };
+
+  const saveDepartment = async () => {
     setIsSubmitting(true);
     setError("");
 
@@ -86,19 +90,20 @@ export default function DepartemenPage() {
       if (!response.ok) throw new Error(data.message || 'Gagal menyimpan departemen');
 
       alert(isEditMode ? 'Departemen berhasil diperbarui!' : 'Departemen berhasil ditambahkan!');
-      await fetchDepartments(); 
+      await fetchDepartments();
       handleCloseModal();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleEdit = (department: Department) => {
-    setFormData({ 
-      name: department.name, 
-      code: department.code, 
+    setFormData({
+      name: department.name,
+      code: department.code,
       division_id: department.division_id.toString()
     });
     setEditId(department.id);
@@ -107,14 +112,16 @@ export default function DepartemenPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus departemen ini?")) return;
-
     try {
       const response = await fetch(`/api/admin/departments/${id}`, { method: 'DELETE' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Gagal menghapus departemen');
 
-      alert('Departemen berhasil dihapus!');
+      if (data.soft_deleted) {
+        alert('Departemen tidak dapat dihapus karena masih digunakan, status diubah menjadi non-aktif.');
+      } else {
+        alert('Departemen berhasil dihapus!');
+      }
       await fetchDepartments();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal menghapus departemen');
@@ -129,7 +136,15 @@ export default function DepartemenPage() {
         body: JSON.stringify({ ...department, is_active: !department.is_active }),
       });
       if (!response.ok) throw new Error('Gagal mengubah status');
-      await fetchDepartments();
+
+      // Update state lokal tanpa fetch ulang untuk mempertahankan urutan
+      setDepartments(prevDepartments =>
+        prevDepartments.map(dept =>
+          dept.id === department.id
+            ? { ...dept, is_active: !dept.is_active }
+            : dept
+        )
+      );
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Gagal mengubah status');
     }
@@ -141,6 +156,7 @@ export default function DepartemenPage() {
     setEditId(null);
     setFormData({ name: "", code: "", division_id: "" });
     setError("");
+    setIsSubmitting(false);
   };
 
   const filteredDepartments = departments.filter(d =>
@@ -187,32 +203,40 @@ export default function DepartemenPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-[#205d7d] text-white">
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Nama Departemen</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Kode Departemen</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Divisi</th> {/* KOLOM BARU */}
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center">Status</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center">Aksi</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left rounded-tl-lg">Nama Departemen</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Divisi</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center">Action</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center rounded-tr-lg">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredDepartments.map((department) => (
-                      <tr key={department.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{department.name}</td>
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{department.code}</td>
-                        <td className="px-4 py-3 font-['Poppins'] text-sm">{department.division_name}</td> {/* DATA BARU */}
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => handleToggleStatus(department)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${department.is_active ? "bg-green-500" : "bg-red-500"}`}>
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${department.is_active ? "translate-x-6" : "translate-x-1"}`} />
-                          </button>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => handleEdit(department)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Pencil size={18} /></button>
-                            <button onClick={() => handleDelete(department.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={18} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredDepartments.length === 0 ? (
+                      <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-500">Tidak ada data departemen</td></tr>
+                    ) : (
+                      filteredDepartments.map((department) => (
+                        <tr key={department.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{department.name}</td>
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{department.division_name}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <button onClick={() => handleEdit(department)} className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors" title="Edit">
+                                <Pencil size={18} />
+                              </button>
+                              <button onClick={() => handleDelete(department.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div className="flex justify-center">
+                              <button onClick={() => handleToggleStatus(department)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${department.is_active ? "bg-green-500" : "bg-gray-300"}`}>
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${department.is_active ? "translate-x-6" : "translate-x-1"}`} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -240,11 +264,11 @@ export default function DepartemenPage() {
                 {/* DROPDOWN DIVISI */}
                 <div>
                   <label className="block font-['Poppins'] text-sm font-medium text-[#1e1e1e] mb-2">Divisi <span className="text-red-500">*</span></label>
-                  <select 
-                    value={formData.division_id} 
-                    onChange={(e) => setFormData({ ...formData, division_id: e.target.value })} 
-                    className="w-full h-12 px-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] bg-white" 
-                    required 
+                  <select
+                    value={formData.division_id}
+                    onChange={(e) => setFormData({ ...formData, division_id: e.target.value })}
+                    className="w-full h-12 px-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] bg-white"
+                    required
                     disabled={isSubmitting}
                   >
                     <option value="">Pilih Divisi</option>
@@ -258,7 +282,7 @@ export default function DepartemenPage() {
               </div>
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={handleCloseModal} className="flex-1 h-12 border border-gray-300 text-gray-700 rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-gray-50" disabled={isSubmitting}>Batal</button>
-                <button type="submit" className="flex-1 h-12 bg-[#4180a9] text-white rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-[#356890] disabled:opacity-50" disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Update' : 'Simpan')}</button>
+                <button type="submit" className="flex-1 h-12 bg-[#4180a9] text-white rounded-[10px] font-['Poppins'] font-medium text-sm hover:bg-[#356890] disabled:opacity-50" disabled={isSubmitting}>{isSubmitting ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Simpan')}</button>
               </div>
             </form>
           </div>

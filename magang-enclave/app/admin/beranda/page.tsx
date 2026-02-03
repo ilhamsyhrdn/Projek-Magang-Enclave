@@ -2,17 +2,28 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/sidebar-admin";
 import { Menu, ArrowUpRight, Calendar } from "lucide-react";
 import { useRequireAuth } from '@/lib/auth-context';
 
 export default function DashboardPage() {
   useRequireAuth(['admin']);
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState("Desember");
   const [startDate, setStartDate] = useState("2025-12-09");
   const [endDate, setEndDate] = useState("2025-12-10");
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCardClick = (route: string) => {
+    router.push(route);
+  };
+
+  const handleLetterClick = (letterId: number) => {
+    // Adjust route based on letter type if needed
+    router.push(`/admin/daftar-surat/surat-masuk?id=${letterId}`);
+  };
 
   const notifications = [
     {
@@ -83,6 +94,7 @@ export default function DashboardPage() {
     {
       id: 1,
       title: "Total Surat Masuk",
+      route: "/admin/daftar-surat/surat-masuk",
       count: "0/0",
       bgGradient: "from-[#0f3041] to-[#277ba7]",
       icon: "/totalSuratMasuk.svg",
@@ -90,6 +102,7 @@ export default function DashboardPage() {
     {
       id: 2,
       title: "Total Surat Keluar",
+      route: "/admin/daftar-surat/surat-keluar",
       count: "1/3",
       bgGradient: "from-[#0f3041] to-[#277ba7]",
       icon: "/totalSuratKeluar.svg",
@@ -97,6 +110,7 @@ export default function DashboardPage() {
     {
       id: 3,
       title: "Total Memo",
+      route: "/admin/daftar-surat/memo",
       count: "13/30",
       bgGradient: "from-[#0f3041] to-[#277ba7]",
       icon: "/totalMemo.svg",
@@ -104,6 +118,7 @@ export default function DashboardPage() {
     {
       id: 4,
       title: "Total Notulensi",
+      route: "/admin/daftar-surat/notulensi",
       count: "3/9",
       bgGradient: "from-[#0f3041] to-[#277ba7]",
       icon: "/suratNotulensi.svg",
@@ -178,7 +193,8 @@ export default function DashboardPage() {
             {statsCards.map((card) => (
               <div
                 key={card.id}
-                className={`relative w-full h-[189px] rounded-[20px] bg-gradient-to-b ${card.bgGradient} p-5`}
+                onClick={() => handleCardClick(card.route)}
+                className={`relative w-full h-[189px] rounded-[20px] bg-gradient-to-b ${card.bgGradient} p-5 cursor-pointer hover:opacity-90 transition-opacity`}
               >
                 {/* Icon di kiri atas */}
                 <div className="w-[50px] h-[50px] mb-4">
@@ -413,6 +429,7 @@ export default function DashboardPage() {
                 {priorityLetters.map((letter) => (
                   <div
                     key={letter.id}
+                    onClick={() => handleLetterClick(letter.id)}
                     className="border-l-[6px] border-red-500 bg-white p-4 hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <div className="flex justify-between items-start mb-3">

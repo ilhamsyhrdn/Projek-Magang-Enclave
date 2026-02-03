@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      "no-trailing-spaces": "off",
+      "@typescript-eslint/no-trailing-spaces": "off",
+      "no-multiple-empty-lines": "off",
+      "eol-last": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

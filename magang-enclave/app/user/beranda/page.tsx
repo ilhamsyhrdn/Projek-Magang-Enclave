@@ -1,12 +1,101 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import SidebarUser from "@/app/components/sidebar-user";
 import { Menu, ArrowUpRight } from "lucide-react";
 
 export default function BerandaUserPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [stats, setStats] = useState({
+    suratMasuk: { created: 0, total: 0 },
+    suratKeluar: { created: 0, total: 0 },
+    memo: { created: 0, total: 0 },
+    notulensi: { created: 0, total: 0 },
+  });
+  const [priorityLetters, setPriorityLetters] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          return; // Jangan redirect, biar middleware yang handle
+        }
+
+        // Fetch statistics
+        try {
+          const statsResponse = await fetch('/api/user/dashboard/stats', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (statsResponse.ok && isMounted) {
+            const statsData = await statsResponse.json();
+            if (statsData.success) {
+              setStats(statsData.data);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching stats:', err);
+        }
+
+        // Fetch priority letters
+        try {
+          const priorityResponse = await fetch('/api/user/dashboard/priority-letters', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (priorityResponse.ok && isMounted) {
+            const priorityData = await priorityResponse.json();
+            if (priorityData.success) {
+              setPriorityLetters(priorityData.data);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching priority letters:', err);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleLetterClick = (letter: any) => {
+    const routes: Record<string, string> = {
+      'incoming_mail': '/user/surat-masuk',
+      'outgoing_mail': '/user/surat-keluar',
+      'memo': '/user/memo',
+      'notulensi': '/user/notulensi',
+    };
+
+    const route = routes[letter.type];
+    if (route) {
+      router.push(`${route}?id=${letter.id}`);
+    }
+  };
+
+  const handleCardClick = (route: string) => {
+    router.push(route);
+  };
 
   const notifications = [
     {
@@ -45,55 +134,38 @@ export default function BerandaUserPage() {
     {
       id: 1,
       title: "Total Surat Masuk",
-      count: "0/0",
+      count: `${stats.suratMasuk.created}/${stats.suratMasuk.total}`,
       bgGradient: "from-[#0f3041] to-[#277ba7]",
       icon: "/totalSuratMasuk.svg",
+      route: "/user/surat-masuk",
     },
     {
       id: 2,
       title: "Total Surat Keluar",
-      count: "1/3",
+      count: `${stats.suratKeluar.created}/${stats.suratKeluar.total}`,
       bgGradient: "from-[#0f3041] to-[#277ba7]",
       icon: "/totalSuratKeluar.svg",
+      route: "/user/surat-keluar",
     },
     {
       id: 3,
       title: "Total Memo",
-      count: "13/30",
+      count: `${stats.memo.created}/${stats.memo.total}`,
       bgGradient: "from-[#0f3041] to-[#277ba7]",
       icon: "/totalMemo.svg",
+      route: "/user/memo",
     },
     {
       id: 4,
       title: "Total Notulensi",
-      count: "3/9",
+      count: `${stats.notulensi.created}/${stats.notulensi.total}`,
       bgGradient: "from-[#0f3041] to-[#277ba7]",
       icon: "/suratNotulensi.svg",
+      route: "/user/notulensi",
     },
   ];
 
-  const suratPrioritasTinggi = [
-    {
-      id: 1,
-      nomor: "01/C111/07/11/2025",
-      title: "Surat Kerjasama Vendor",
-      pembuat: "Jhon doe",
-      category: "Internal",
-      tanggal: "11 Desember 2025",
-      approver: "Chandra",
-      status: "Tertunda 3 hari",
-    },
-    {
-      id: 2,
-      nomor: "01/C111/07/11/2025",
-      title: "Surat Kerjasama Vendor",
-      pembuat: "Jhon doe",
-      category: "Internal",
-      tanggal: "11 Desember 2025",
-      approver: "Chandra",
-      status: "Tertunda 3 hari",
-    },
-  ];
+  const suratPrioritasTinggi = priorityLetters;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -131,7 +203,8 @@ export default function BerandaUserPage() {
             {statsCards.map((card) => (
               <div
                 key={card.id}
-                className={`relative w-full h-[189px] rounded-[20px] bg-gradient-to-b ${card.bgGradient} p-5`}
+                onClick={() => handleCardClick(card.route)}
+                className={`relative w-full h-[189px] rounded-[20px] bg-gradient-to-b ${card.bgGradient} p-5 cursor-pointer hover:opacity-90 transition-opacity`}
               >
                 {/* Icon di kiri atas */}
                 <div className="w-[50px] h-[50px] mb-4">
@@ -164,40 +237,53 @@ export default function BerandaUserPage() {
               Surat Prioritas Tinggi
             </h2>
 
-            <div className="space-y-4">
-              {suratPrioritasTinggi.map((surat) => (
-                <div
-                  key={surat.id}
-                  className="border-l-[6px] border-red-500 bg-white pl-4 pr-4 py-3 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <p className="font-['Poppins'] text-sm text-gray-700 mb-1">
-                        {surat.nomor}
-                      </p>
-                      <h3 className="font-['Poppins'] font-semibold text-base text-gray-900 mb-1">
-                        {surat.title}
-                      </h3>
-                      <p className="font-['Poppins'] text-sm text-gray-700">
-                        {surat.pembuat} | {surat.category}
-                      </p>
-                    </div>
+            {loading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Memuat data...</p>
+              </div>
+            ) : suratPrioritasTinggi.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Tidak ada surat prioritas tinggi</p>
+              </div>
+            ) : (
+              <div className="max-h-[500px] overflow-y-auto pr-2 space-y-4">
+                {suratPrioritasTinggi.map((surat) => (
+                  <div
+                    key={`${surat.type}-${surat.id}`}
+                    onClick={() => handleLetterClick(surat)}
+                    className="border-l-[6px] border-red-500 bg-white pl-4 pr-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <p className="font-['Poppins'] text-sm text-gray-700 mb-1">
+                          {surat.nomor}
+                        </p>
+                        <h3 className="font-['Poppins'] font-semibold text-base text-gray-900 mb-1">
+                          {surat.title}
+                        </h3>
+                        <p className="font-['Poppins'] text-sm text-gray-700">
+                          {surat.pembuat} | {surat.category}
+                        </p>
+                      </div>
 
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="px-3 py-1 bg-orange-500 text-white text-xs font-['Poppins'] font-medium rounded-md whitespace-nowrap">
-                        {surat.status}
-                      </span>
-                      <p className="font-['Poppins'] text-sm text-gray-700 mt-2">
-                        {surat.tanggal}
-                      </p>
-                      <p className="font-['Poppins'] text-sm text-gray-700">
-                        Approver : {surat.approver}
-                      </p>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="px-3 py-1 bg-orange-500 text-white text-xs font-['Poppins'] font-medium rounded-md whitespace-nowrap">
+                          {surat.status}
+                        </span>
+                        <p className="font-['Poppins'] text-sm text-gray-700 mt-2">
+                          {surat.tanggal}
+                        </p>
+                        {surat.approver && surat.approver !== '-' && (
+                          <p className="font-['Poppins'] text-sm text-gray-700">
+                            Approver : {surat.approver}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

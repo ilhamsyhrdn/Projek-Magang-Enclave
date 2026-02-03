@@ -36,11 +36,19 @@ export function middleware(request: NextRequest) {
     
     console.log('[Middleware] Token verified successfully. Payload:', payload);
 
-    if (pathname.startsWith('/dashboard-superadmin') && payload.role !== 'superadmin') {
+    // Normalisasi path untuk case-insensitive comparison
+    const normalizedPath = pathname.toLowerCase();
+
+    if (normalizedPath.startsWith('/dashboard-superadmin') && payload.role !== 'superadmin') {
       console.log('[Middleware] Role mismatch for /dashboard-superadmin. Redirecting.');
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    if (pathname.startsWith('/admin') && payload.role !== 'admin') {
+    if (normalizedPath.startsWith('/admin') && !normalizedPath.startsWith('/admin') && payload.role !== 'admin') {
+      console.log('[Middleware] Role mismatch for /admin. Redirecting.');
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    // Pastikan /admin route hanya untuk admin, bukan untuk /dashboard-superadmin
+    if (pathname.startsWith('/admin') && !pathname.toLowerCase().startsWith('/dashboard-superadmin') && payload.role !== 'admin') {
       console.log('[Middleware] Role mismatch for /admin. Redirecting.');
       return NextResponse.redirect(new URL('/login', request.url));
     }
@@ -51,6 +59,14 @@ export function middleware(request: NextRequest) {
     if (pathname.startsWith('/approver') &&
         !['approver', 'secretary'].includes(payload.role)) {
       console.log('[Middleware] Role mismatch for /approver. Redirecting.');
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    if (pathname.startsWith('/direktur') && payload.role !== 'direktur') {
+      console.log('[Middleware] Role mismatch for /direktur. Redirecting.');
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    if (pathname.startsWith('/adk') && payload.role !== 'adk') {
+      console.log('[Middleware] Role mismatch for /adk. Redirecting.');
       return NextResponse.redirect(new URL('/login', request.url));
     }
 

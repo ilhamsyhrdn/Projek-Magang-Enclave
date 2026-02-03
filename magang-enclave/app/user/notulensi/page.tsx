@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import SidebarUser from "@/app/components/sidebar-user";
 import { Menu, Search, Filter, Plus, FileText, Download, Archive, History, X, Send } from "lucide-react";
 import Image from "next/image";
@@ -23,6 +24,7 @@ interface Notulensi {
 }
 
 export default function NotulensiUserPage() {
+  const searchParams = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNotulensi, setSelectedNotulensi] = useState<Notulensi | null>(null);
@@ -121,7 +123,23 @@ export default function NotulensiUserPage() {
 
   useEffect(() => {
     setNotulensiItems(notulensiList);
-  }, []);
+
+    // Auto-open detail from notification
+    const id = searchParams.get('id');
+    if (id) {
+      const notulensi = notulensiList.find(n => n.id === parseInt(id));
+      if (notulensi) {
+        setSelectedNotulensi(notulensi);
+        if (!notulensi.isRead) {
+          setNotulensiItems(prevItems =>
+            prevItems.map(item =>
+              item.id === notulensi.id ? { ...item, isRead: true } : item
+            )
+          );
+        }
+      }
+    }
+  }, [searchParams]);
 
   const handleNotulensiClick = (notulensi: Notulensi) => {
     if (!notulensi.isRead) {
@@ -180,9 +198,6 @@ export default function NotulensiUserPage() {
                     className="w-full h-12 pl-12 pr-4 border border-gray-300 rounded-[12px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
                   />
                 </div>
-                <button className="p-3 border border-gray-300 rounded-[12px] hover:bg-gray-50 transition-colors flex-shrink-0">
-                  <Filter size={20} className="text-gray-600" />
-                </button>
                 <button className="p-3 bg-[#4180a9] text-white rounded-[12px] hover:bg-[#356890] transition-colors flex-shrink-0">
                   <Plus size={20} />
                 </button>
@@ -190,14 +205,19 @@ export default function NotulensiUserPage() {
 
               {/* Notulensi List */}
               <div className="space-y-4 overflow-y-auto flex-1 pr-2 pb-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                {notulensiItems.map((notulensi) => {
+                {notulensiItems.filter(notulensi =>
+                  notulensi.judulNotulen.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  notulensi.noNotulensi.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  notulensi.perihal.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  notulensi.rapat.toLowerCase().includes(searchQuery.toLowerCase())
+                ).map((notulensi) => {
                   const leftBorderColor = !notulensi.isRead ? '#3B82F6' : 'transparent';
 
                   return (
                     <div
                       key={notulensi.id}
                       onClick={() => handleNotulensiClick(notulensi)}
-                      className="bg-white rounded-[15px] p-4 border-l-[6px] border-t-0 border-r-0 border-b-0 shadow-md hover:shadow-lg transition-all cursor-pointer hover:!border-[#60A5FA] hover:!border-l-[6px] hover:!border-t-[2px] hover:!border-r-[2px] hover:!border-b-[2px]"
+                      className="bg-white rounded-[15px] p-4 border-l-[4px] shadow-md hover:shadow-lg transition-all cursor-pointer"
                       style={{ borderLeftColor: leftBorderColor }}
                     >
                     <div className="flex items-start justify-between mb-2">
@@ -317,29 +337,28 @@ export default function NotulensiUserPage() {
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3 mb-6">
-                    <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
-                      <Archive size={18} />
-                      Arsip Notulensi
-                    </button>
-                    <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
+                    <button
+                      onClick={() => {
+                        // Create a dummy PDF download
+                        const link = document.createElement('a');
+                        link.href = '/logo-enclave.png'; // Replace with actual PDF URL
+                        link.download = `Notulensi-${selectedNotulensi.noNotulen}.pdf`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors"
+                    >
                       <Download size={18} />
-                      Unduh Notulensi
+                      Unduh Surat
                     </button>
-                    <button 
+                    <button
                       onClick={() => setIsLogHistoryOpen(true)}
                       className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors"
                     >
                       <History size={18} />
                       Log History
                     </button>
-                    <div className="ml-auto flex items-center gap-2">
-                      <button className="p-3 bg-[#10B981] text-white rounded-full hover:bg-[#059669] transition-colors shadow-md">
-                        <Download size={20} />
-                      </button>
-                      <button className="p-3 bg-[#10B981] text-white rounded-full hover:bg-[#059669] transition-colors shadow-md">
-                        <Send size={20} />
-                      </button>
-                    </div>
                   </div>
 
                   {/* Document Preview */}
@@ -351,15 +370,7 @@ export default function NotulensiUserPage() {
                       <p className="font-['Poppins'] text-lg text-[#1e1e1e] mb-8">
                         {selectedNotulensi.rapat}
                       </p>
-                      <div className="w-80 h-80 mx-auto relative">
-                        <Image
-                          src="/logo-enclave.png"
-                          alt="Document Preview"
-                          width={320}
-                          height={320}
-                          className="object-contain opacity-80"
-                        />
-                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -383,9 +394,9 @@ export default function NotulensiUserPage() {
       {/* Log History Modal */}
       {isLogHistoryOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-[70] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[15px] w-full max-w-[550px] max-h-[85vh] overflow-hidden shadow-2xl">
+          <div className="bg-white rounded-[15px] w-full max-w-[550px] flex flex-col shadow-2xl" style={{ maxHeight: '85vh' }}>
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 flex-shrink-0">
               <h2 className="font-['Poppins'] font-semibold text-[22px] text-[#4180a9]">
                 Log History
               </h2>
@@ -398,7 +409,7 @@ export default function NotulensiUserPage() {
             </div>
 
             {/* Modal Content */}
-            <div className="overflow-y-auto max-h-[calc(85vh-76px)] p-6">
+            <div className="overflow-y-auto flex-1 p-6">
               <div className="space-y-6">
                 {logHistory.map((log, index) => (
                   <div key={log.id} className="flex gap-4 relative">

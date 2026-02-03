@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Sidebar from "@/app/components/sidebar-admin";
 import { Menu, Search, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,31 @@ export default function MemoPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
+
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value) {
+      const date = new Date(value);
+      const formatted = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+      setStartDate(formatted);
+    } else {
+      setStartDate("");
+    }
+  };
+
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value) {
+      const date = new Date(value);
+      const formatted = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+      setEndDate(formatted);
+    } else {
+      setEndDate("");
+    }
+  };
+
   const tabs = [
     { id: "surat-masuk", label: "Surat Masuk", path: "/admin/daftar-surat/surat-masuk" },
     { id: "surat-keluar", label: "Surat Keluar", path: "/admin/daftar-surat/surat-keluar" },
@@ -21,19 +46,19 @@ export default function MemoPage() {
   ];
 
   const allData = [
-    { no: 1, noMemo: "M-001/2025", tanggalMemo: "2025-12-12", kategori: "Internal", tujuan: "Dept. Pengembangan Organisasi", tanggalSelesai: "2025-12-15", perihal: "Rapat Koordinasi", status: "Menunggu", statusColor: "#D9D9D9" },
+    { no: 1, noMemo: "M-001/2025", tanggalMemo: "2025-12-12", kategori: "Internal", tujuan: "Dept. Pengembangan Organisasi", tanggalSelesai: "2025-12-15", perihal: "Rapat Koordinasi", status: "Ditolak", statusColor: "#EF4444" },
     { no: 2, noMemo: "M-002/2025", tanggalMemo: "2025-12-13", kategori: "Internal", tujuan: "Dept. Keuangan", tanggalSelesai: "2025-12-20", perihal: "Laporan Keuangan Bulanan", status: "Diproses", statusColor: "#FFBD66" },
     { no: 3, noMemo: "M-003/2025", tanggalMemo: "2025-12-14", kategori: "Internal", tujuan: "Dept. Pengembangan Teknologi & Informasi", tanggalSelesai: "2025-12-18", perihal: "Update Website", status: "Selesai", statusColor: "#56F2A7" },
-    { no: 4, noMemo: "M-004/2025", tanggalMemo: "2025-12-15", kategori: "Internal", tujuan: "Dept. Hubungan Internal", tanggalSelesai: "2025-12-22", perihal: "Koordinasi Antar Departemen", status: "Menunggu", statusColor: "#D9D9D9" },
+    { no: 4, noMemo: "M-004/2025", tanggalMemo: "2025-12-15", kategori: "Internal", tujuan: "Dept. Hubungan Internal", tanggalSelesai: "2025-12-22", perihal: "Koordinasi Antar Departemen", status: "Ditolak", statusColor: "#EF4444" },
     { no: 5, noMemo: "M-005/2025", tanggalMemo: "2025-12-16", kategori: "Eksternal", tujuan: "Dept. Media Informasi", tanggalSelesai: "2025-12-25", perihal: "Publikasi Kegiatan", status: "Diproses", statusColor: "#FFBD66" },
     { no: 6, noMemo: "M-006/2025", tanggalMemo: "2025-12-17", kategori: "Internal", tujuan: "Dept. Ketertiban Internal", tanggalSelesai: "2025-12-23", perihal: "Evaluasi Kedisiplinan", status: "Selesai", statusColor: "#56F2A7" },
-    { no: 7, noMemo: "M-007/2025", tanggalMemo: "2025-12-18", kategori: "Eksternal", tujuan: "Dept. Hubungan Eksternal", tanggalSelesai: "2025-12-26", perihal: "Kerjasama Instansi", status: "Menunggu", statusColor: "#D9D9D9" },
+    { no: 7, noMemo: "M-007/2025", tanggalMemo: "2025-12-18", kategori: "Eksternal", tujuan: "Dept. Hubungan Eksternal", tanggalSelesai: "2025-12-26", perihal: "Kerjasama Instansi", status: "Ditolak", statusColor: "#EF4444" },
     { no: 8, noMemo: "M-008/2025", tanggalMemo: "2025-12-19", kategori: "Internal", tujuan: "Dept. Kewirausahaan", tanggalSelesai: "2025-12-28", perihal: "Program Business Plan", status: "Diproses", statusColor: "#FFBD66" },
     { no: 9, noMemo: "M-009/2025", tanggalMemo: "2025-12-20", kategori: "Internal", tujuan: "Dept. Sosial", tanggalSelesai: "2025-12-27", perihal: "Kegiatan Bakti Sosial", status: "Selesai", statusColor: "#56F2A7" },
-    { no: 10, noMemo: "M-010/2025", tanggalMemo: "2025-12-21", kategori: "Internal", tujuan: "Dept. Minat Bakat", tanggalSelesai: "2025-12-29", perihal: "Workshop & Pelatihan", status: "Menunggu", statusColor: "#D9D9D9" },
+    { no: 10, noMemo: "M-010/2025", tanggalMemo: "2025-12-21", kategori: "Internal", tujuan: "Dept. Minat Bakat", tanggalSelesai: "2025-12-29", perihal: "Workshop & Pelatihan", status: "Ditolak", statusColor: "#EF4444" },
     { no: 11, noMemo: "M-011/2025", tanggalMemo: "2025-12-22", kategori: "Internal", tujuan: "Dept. Keprofesian", tanggalSelesai: "2025-12-30", perihal: "Sertifikasi Anggota", status: "Diproses", statusColor: "#FFBD66" },
     { no: 12, noMemo: "M-012/2025", tanggalMemo: "2025-12-23", kategori: "Internal", tujuan: "Dept. Kelimuan", tanggalSelesai: "2025-12-31", perihal: "Seminar Akademik", status: "Selesai", statusColor: "#56F2A7" },
-    { no: 13, noMemo: "M-013/2025", tanggalMemo: "2025-12-24", kategori: "Internal", tujuan: "Dept. Pengembangan Organisasi", tanggalSelesai: "2026-01-02", perihal: "Evaluasi Program Kerja", status: "Menunggu", statusColor: "#D9D9D9" },
+    { no: 13, noMemo: "M-013/2025", tanggalMemo: "2025-12-24", kategori: "Internal", tujuan: "Dept. Pengembangan Organisasi", tanggalSelesai: "2026-01-02", perihal: "Evaluasi Program Kerja", status: "Ditolak", statusColor: "#EF4444" },
   ];
 
   const formatDate = (dateStr: string) => {
@@ -43,7 +68,7 @@ export default function MemoPage() {
   };
 
   const filteredData = allData.filter(item => {
-    const matchSearch = !searchQuery || 
+    const matchSearch = !searchQuery ||
       item.noMemo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.kategori.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.tujuan.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -127,21 +152,22 @@ export default function MemoPage() {
               </div>
 
               {/* Date Range Picker */}
-              <div className="flex items-center gap-2 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[280px]">
+              <div className="flex items-center gap-3 border border-gray-300 rounded-[10px] px-4 h-12 bg-white min-w-[300px]">
                 <input
-                  type="date"
-                  value={startDate}
+                  type="date" value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="font-['Poppins'] text-sm focus:outline-none"
+                  min="1900-01-01"
+                  max="2999-12-31"
+                  className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1"
                 />
-                <span className="text-gray-400">-</span>
+                <span className="text-gray-400 font-medium">-</span>
                 <input
-                  type="date"
-                  value={endDate}
+                  type="date" value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="font-['Poppins'] text-sm focus:outline-none"
+                  min="1900-01-01"
+                  max="2999-12-31"
+                  className="font-['Poppins'] text-sm text-gray-700 focus:outline-none bg-transparent flex-1"
                 />
-                <Calendar size={20} className="text-gray-400 flex-shrink-0" />
               </div>
             </div>
 
@@ -153,30 +179,30 @@ export default function MemoPage() {
                     <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center rounded-tl-[10px] w-12">
                       No
                     </th>
-                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center normal-case">
                       No Memo
                     </th>
-                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
-                      Tanggal Memo
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center normal-case">
+                      Tanggal Dibuat
                     </th>
-                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center normal-case">
                       Kategori
                     </th>
-                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center normal-case">
                       Tujuan
                     </th>
-                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center">
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center normal-case">
                       Perihal
                     </th>
-                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center rounded-tr-[10px]">
+                    <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-2 text-center rounded-tr-[10px] normal-case">
                       Status
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredData.length > 0 ? filteredData.map((row, index) => (
-                    <tr 
-                      key={index} 
+                    <tr
+                      key={index}
                       className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                     >
                       <td className="font-['Poppins'] font-normal text-xs md:text-sm py-3 px-2 text-center text-black">
@@ -223,3 +249,5 @@ export default function MemoPage() {
     </div>
   );
 }
+
+

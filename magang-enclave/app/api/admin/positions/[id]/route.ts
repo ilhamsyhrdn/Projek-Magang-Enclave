@@ -43,17 +43,27 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const users = await queryWithTenant(
       tenantName,
-      'SELECT id FROM users WHERE position_id = $1',
+      'SELECT id FROM users WHERE position_id = $1 AND is_active = true',
       [id]
     );
 
     if (users.length > 0) {
-      return NextResponse.json({ message: 'Cannot delete position, it is being used by a user' }, { status: 400 });
+      // Soft delete: set is_active to false
+      await queryWithTenant(
+        tenantName,
+        'UPDATE positions SET is_active = false, updated_at = NOW() WHERE id = $1',
+        [id]
+      );
+      return NextResponse.json({ 
+        message: 'Position is being used, status changed to inactive',
+        soft_deleted: true
+      });
     }
 
+    // Hard delete if not used
     await queryWithTenant(tenantName, 'DELETE FROM positions WHERE id = $1', [id]);
 
-    return NextResponse.json({ message: 'Position deleted successfully' });
+    return NextResponse.json({ message: 'Position deleted successfully', soft_deleted: false });
   } catch (error) {
     console.error('Error deleting position:', error);
     return NextResponse.json({ message: 'Failed to delete position' }, { status: 500 });
