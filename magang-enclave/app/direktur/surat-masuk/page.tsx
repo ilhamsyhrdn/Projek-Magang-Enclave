@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import SidebarDirektur from "@/app/components/sidebar-direktur";
 import { Menu, Search, Filter, FileText, Download, History, X, Archive, FolderInput } from "lucide-react";
 import Image from "next/image";
@@ -26,6 +26,7 @@ interface Surat {
 }
 
 export default function SuratMasukApproverPage() {
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSurat, setSelectedSurat] = useState<Surat | null>(null);
@@ -186,6 +187,27 @@ export default function SuratMasukApproverPage() {
     if (selectedSurat) {
       alert(`Disposisi surat "${selectedSurat.title}"`);
       // Add disposisi logic here
+    }
+  };
+
+  const handleDownload = () => {
+    if (selectedSurat) {
+      // Create a dummy PDF download
+      const link = document.createElement('a');
+      link.href = '#'; // In production, this should be the actual file URL
+      link.download = `${selectedSurat.noSurat}_${selectedSurat.title}.pdf`;
+      
+      // For demo: show alert
+      alert(`Mengunduh surat: ${selectedSurat.noSurat}`);
+      // document.body.appendChild(link);
+      // link.click();
+      // document.body.removeChild(link);
+    }
+  };
+
+  const handleArsip = () => {
+    if (selectedSurat) {
+      router.push('/direktur/arsip/surat-masuk');
     }
   };
 
@@ -380,7 +402,10 @@ export default function SuratMasukApproverPage() {
 
                   {/* Bottom Action Buttons */}
                   <div className="flex items-center gap-3 pb-6 border-b border-gray-200">
-                    <button className="flex items-center gap-2 px-4 py-2 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
+                    <button
+                      onClick={handleDownload}
+                      className="flex items-center gap-2 px-4 py-2 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors"
+                    >
                       <Download size={18} />
                       Unduh Surat
                     </button>

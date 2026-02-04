@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import SidebarUser from "@/app/components/sidebar-user";
 import { Menu, Search, Filter, FileText, Download, Archive, History, X, Send, ChevronRight } from "lucide-react";
 import Image from "next/image";
@@ -26,6 +26,7 @@ interface Surat {
 }
 
 export default function SuratMasukUserPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -199,6 +200,18 @@ export default function SuratMasukUserPage() {
 
   const handleCloseDetail = () => {
     setSelectedSurat(null);
+  };
+
+  const handleDownload = () => {
+    if (selectedSurat) {
+      alert(`Mengunduh surat: ${selectedSurat.noSurat}`);
+    }
+  };
+
+  const handleArsip = () => {
+    if (selectedSurat) {
+      router.push('/user/arsip/surat-masuk');
+    }
   };
 
   return (
@@ -390,15 +403,7 @@ export default function SuratMasukUserPage() {
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3 mb-6">
                     <button
-                      onClick={() => {
-                        // Create a dummy PDF download
-                        const link = document.createElement('a');
-                        link.href = '/logo-enclave.png'; // Replace with actual PDF URL
-                        link.download = `Surat-Masuk-${selectedSurat.noSurat}.pdf`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
+                      onClick={handleDownload}
                       className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors"
                     >
                       <Download size={18} />

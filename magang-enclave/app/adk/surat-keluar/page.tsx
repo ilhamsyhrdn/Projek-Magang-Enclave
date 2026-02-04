@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import SidebarAdk from "@/app/components/sidebar-adk";
 import { Menu, Search, Filter, Plus, FileText, Download, Archive, History, X, Send, ChevronRight, Upload, Calendar, Check, Clock } from "lucide-react";
 import Image from "next/image";
@@ -220,6 +220,18 @@ export default function SuratKeluarAdkPage() {
         );
         setSelectedSurat(null);
       }
+    }
+  };
+
+  const handleDownload = () => {
+    if (selectedSurat) {
+      alert(`Mengunduh surat: ${selectedSurat.noSurat}`);
+    }
+  };
+
+  const handleArsip = () => {
+    if (selectedSurat) {
+      router.push('/adk/arsip/surat-keluar');
     }
   };
 
@@ -518,11 +530,11 @@ export default function SuratKeluarAdkPage() {
 
                 {/* Action Buttons */}
                 <div className="flex items-center gap-3 mb-6">
-                  <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
+                  <button onClick={handleArsip} className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
                     <Archive size={18} />
                     Arsip Surat Keluar
                   </button>
-                  <button className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
+                  <button onClick={handleDownload} className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
                     <Download size={18} />
                     Unduh Surat
                   </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import SidebarApprover from "@/app/components/sidebar-approver";
 import { Menu, Search, Filter, FileText, Download, History, X, Check, Clock, Archive, XCircle } from "lucide-react";
 import Image from "next/image";
@@ -221,6 +221,18 @@ export default function SuratMasukApproverPage() {
     }
   };
 
+  const handleDownload = () => {
+    if (selectedSurat) {
+      alert(`Mengunduh surat: ${selectedSurat.noSurat}`);
+    }
+  };
+
+  const handleArsip = () => {
+    if (selectedSurat) {
+      router.push('/approver/arsip/surat-masuk');
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <SidebarApprover
@@ -412,9 +424,13 @@ export default function SuratMasukApproverPage() {
 
                   {/* Bottom Action Buttons */}
                   <div className="flex items-center gap-3 pb-6 border-b border-gray-200">
-                    <button className="flex items-center gap-2 px-4 py-2 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
+                    <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
                       <Download size={18} />
                       Unduh Surat
+                    </button>
+                    <button onClick={handleArsip} className="flex items-center gap-2 px-4 py-2 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors">
+                      <Archive size={18} />
+                      Arsip
                     </button>
                     <button
                       onClick={() => setIsLogHistoryOpen(true)}

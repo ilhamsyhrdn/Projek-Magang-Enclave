@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import SidebarUser from "@/app/components/sidebar-user";
 import { Menu, Search, Filter, Plus, FileText, Download, Archive, History, X, Send, ChevronRight, Upload, Calendar } from "lucide-react";
 import Image from "next/image";
@@ -26,6 +26,7 @@ interface Surat {
 }
 
 export default function SuratKeluarUserPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -213,6 +214,18 @@ export default function SuratKeluarUserPage() {
 
   const handleCloseDetail = () => {
     setSelectedSurat(null);
+  };
+
+  const handleDownload = () => {
+    if (selectedSurat) {
+      alert(`Mengunduh surat: ${selectedSurat.noSurat}`);
+    }
+  };
+
+  const handleArsip = () => {
+    if (selectedSurat) {
+      router.push('/user/arsip/surat-keluar');
+    }
   };
 
   const handleFileUpload = (file: File) => {
@@ -502,15 +515,7 @@ export default function SuratKeluarUserPage() {
                   {/* Action Buttons */}
                   <div className="flex items-center gap-3 mb-6">
                     <button
-                      onClick={() => {
-                        // Create a dummy PDF download
-                        const link = document.createElement('a');
-                        link.href = '/logo-enclave.png'; // Replace with actual PDF URL
-                        link.download = `Surat-Keluar-${selectedSurat.noSurat}.pdf`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
+                      onClick={handleDownload}
                       className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors"
                     >
                       <Download size={18} />
@@ -524,45 +529,14 @@ export default function SuratKeluarUserPage() {
                       Log History
                     </button>
                     <button
-                      onClick={async () => {
-                        try {
-                          // Convert date format from DD/MM/YYYY to YYYY-MM-DD
-                          const dateParts = selectedSurat.tanggalSurat.split('/');
-                          const formattedDate = dateParts.length === 3
-                            ? `20${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
-                            : new Date().toISOString().split('T')[0];
+                      onClick={handleArsip}
 
                           const response = await fetch('/api/user/arsip', {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({
-                              documentId: selectedSurat.id,
-                              documentType: 'Surat Keluar',
-                              documentNumber: selectedSurat.noSurat,
-                              title: selectedSurat.perihal,
-                              content: selectedSurat.perihal,
-                              category: selectedSurat.category,
-                              divisionId: null,
-                              departmentId: null,
-                              documentDate: formattedDate,
-                              archivedBy: 1 // Replace with actual user ID from session
-                            }),
-                          });
-
-                          if (response.ok) {
-                            alert('Surat berhasil diarsipkan!');
-                            window.location.href = '/user/arsip';
-                          } else {
-                            alert('Gagal mengarsipkan surat');
-                          }
-                        } catch (error) {
-                          console.error('Error archiving document:', error);
-                          alert('Terjadi kesalahan saat mengarsipkan surat');
-                        }
-                      }}
-                      className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors"
+                      className="flex items-center gap-2 px-5 py-2.5 border border-[#4180a9] text-[#4180a9] rounded-[10px] font-['Poppins'] text-sm hover:bg-[#4180a9] hover:text-white transition-colors\"
                     >
                       <Archive size={18} />
                       Arsip
