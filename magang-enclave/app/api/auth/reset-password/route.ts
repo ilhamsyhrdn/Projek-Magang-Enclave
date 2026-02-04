@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
 
     const users = await queryWithTenant(
       tenantName,
-      `SELECT id, full_name, email, reset_token_expiry 
-       FROM users 
-       WHERE email = $1 
-       AND reset_token = $2 
+      `SELECT id, full_name, email, reset_token_expiry
+       FROM users
+       WHERE email = $1
+       AND reset_token = $2
        AND is_active = true`,
       [email, resetCode]
     );
@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
 
     await queryWithTenant(
       tenantName,
-      `UPDATE users 
-       SET password_hash = $1, 
-           reset_token = NULL, 
+      `UPDATE users
+       SET password_hash = $1,
+           reset_token = NULL,
            reset_token_expiry = NULL,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $2`,

@@ -12,13 +12,13 @@ export async function GET(request: NextRequest) {
     const departments = await queryWithTenant(
       tenantName,
       `
-        SELECT 
-          d.id, 
-          d.name, 
-          d.code, 
-          d.division_id, 
-          d.is_active, 
-          div.name as division_name 
+        SELECT
+          d.id,
+          d.name,
+          d.code,
+          d.division_id,
+          d.is_active,
+          div.name as division_name
         FROM departments d
         JOIN divisions div ON d.division_id = div.id
         ORDER BY d.created_at ASC

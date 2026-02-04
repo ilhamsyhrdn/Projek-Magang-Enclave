@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
     const arsipData = await queryWithTenant(
       tenantName,
-      `SELECT 
+      `SELECT
         ad.id,
         ad.document_number as nomer_surat,
         ad.title as perihal_surat,
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const transformedData = arsipData.map((item: any) => {
       const kategori = item.kategori || 'Surat Masuk';
       categoryCounter[kategori] = (categoryCounter[kategori] || 0) + 1;
-      
+
       return {
         id: item.id,
         no: categoryCounter[kategori],

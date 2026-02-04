@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.substring(7);
     const decoded = verifyToken(token);
-    
+
     if (!decoded) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const query = `
       WITH high_priority_items AS (
         -- Surat Masuk yang perlu di-approve
-        SELECT 
+        SELECT
           'incoming_mail' as type,
           im.id,
           im.mail_number as nomor,
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
           im.priority,
           ima.status,
           im.created_at,
-          CASE 
+          CASE
             WHEN ima.status = 'pending' THEN EXTRACT(DAY FROM (CURRENT_TIMESTAMP - im.created_at))
             ELSE 0
           END as days_pending
@@ -50,14 +50,14 @@ export async function GET(request: NextRequest) {
         LEFT JOIN categories c ON im.category_id = c.id
         LEFT JOIN incoming_mail_approvals ima ON im.id = ima.incoming_mail_id AND ima.approver_id = $1
         LEFT JOIN users approver ON ima.approver_id = approver.id
-        WHERE im.is_active = true 
+        WHERE im.is_active = true
           AND im.priority = 'high'
           AND ima.approver_id = $1
-        
+
         UNION ALL
-        
+
         -- Surat Keluar yang perlu di-approve
-        SELECT 
+        SELECT
           'outgoing_mail' as type,
           om.id,
           om.mail_number as nomor,
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
           om.priority,
           oma.status,
           om.created_at,
-          CASE 
+          CASE
             WHEN oma.status = 'pending' THEN EXTRACT(DAY FROM (CURRENT_TIMESTAMP - om.created_at))
             ELSE 0
           END as days_pending
@@ -78,14 +78,14 @@ export async function GET(request: NextRequest) {
         LEFT JOIN categories c ON om.category_id = c.id
         LEFT JOIN outgoing_mail_approvals oma ON om.id = oma.outgoing_mail_id AND oma.approver_id = $1
         LEFT JOIN users approver ON oma.approver_id = approver.id
-        WHERE om.is_active = true 
+        WHERE om.is_active = true
           AND om.priority = 'high'
           AND oma.approver_id = $1
-        
+
         UNION ALL
-        
+
         -- Memo yang perlu di-approve
-        SELECT 
+        SELECT
           'memo' as type,
           m.id,
           m.memo_number as nomor,
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
           m.priority,
           maf.status,
           m.created_at,
-          CASE 
+          CASE
             WHEN maf.status = 'pending' THEN EXTRACT(DAY FROM (CURRENT_TIMESTAMP - m.created_at))
             ELSE 0
           END as days_pending
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
         LEFT JOIN users u ON m.created_by = u.id
         LEFT JOIN memo_approval_flows maf ON m.id = maf.memo_id AND maf.approver_id = $1
         LEFT JOIN users approver ON maf.approver_id = approver.id
-        WHERE m.is_active = true 
+        WHERE m.is_active = true
           AND m.priority = 'high'
           AND maf.approver_id = $1
       )
@@ -125,10 +125,10 @@ export async function GET(request: NextRequest) {
       title: item.title || '-',
       pembuat: item.pembuat || '-',
       category: item.category || '-',
-      tanggal: item.tanggal ? new Date(item.tanggal).toLocaleDateString('id-ID', { 
+      tanggal: item.tanggal ? new Date(item.tanggal).toLocaleDateString('id-ID', {
         day: 'numeric',
-        month: 'long', 
-        year: 'numeric' 
+        month: 'long',
+        year: 'numeric'
       }) : '-',
       approver: item.approver_name || '-',
       status: item.days_pending >= 3 ? `Tertunda ${Math.floor(item.days_pending)} hari` : 'Pending',

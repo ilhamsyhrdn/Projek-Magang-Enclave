@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('Token refresh error:', error);
-    
+
     const response = NextResponse.json(
       { message: 'Invalid or expired refresh token' },
       { status: 401 }

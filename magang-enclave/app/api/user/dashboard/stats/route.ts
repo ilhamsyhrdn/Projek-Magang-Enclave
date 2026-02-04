@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.substring(7);
     const decoded = verifyToken(token);
-    
+
     if (!decoded) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
@@ -27,37 +27,37 @@ export async function GET(request: NextRequest) {
 
     // Query untuk menghitung total surat masuk (yang dibuat oleh user)
     const suratMasukQuery = `
-      SELECT 
+      SELECT
         COUNT(*) FILTER (WHERE created_by = $1) as created_count,
         COUNT(*) as total_count
       FROM incoming_mails
       WHERE is_active = true
     `;
     const suratMasukResult = await queryWithTenant(tenantName, suratMasukQuery, [userId]);
-    
+
     // Query untuk menghitung total surat keluar (yang dibuat oleh user)
     const suratKeluarQuery = `
-      SELECT 
+      SELECT
         COUNT(*) FILTER (WHERE created_by = $1) as created_count,
         COUNT(*) as total_count
       FROM outgoing_mails
       WHERE is_active = true
     `;
     const suratKeluarResult = await queryWithTenant(tenantName, suratKeluarQuery, [userId]);
-    
+
     // Query untuk menghitung total memo (yang dibuat oleh user)
     const memoQuery = `
-      SELECT 
+      SELECT
         COUNT(*) FILTER (WHERE created_by = $1) as created_count,
         COUNT(*) as total_count
       FROM memos
       WHERE is_active = true
     `;
     const memoResult = await queryWithTenant(tenantName, memoQuery, [userId]);
-    
+
     // Query untuk menghitung total notulensi (yang dibuat oleh user)
     const notulensiQuery = `
-      SELECT 
+      SELECT
         COUNT(*) FILTER (WHERE created_by = $1) as created_count,
         COUNT(*) as total_count
       FROM notulensi

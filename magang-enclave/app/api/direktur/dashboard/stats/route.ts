@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.substring(7);
     const decoded = verifyToken(token);
-    
+
     if (!decoded) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     // Query untuk menghitung total surat masuk (yang perlu di-approve oleh user)
     const suratMasukQuery = `
-      SELECT 
+      SELECT
         COUNT(*) FILTER (WHERE ima.approver_id = $1) as pending_approval,
         COUNT(*) as total_count
       FROM incoming_mails im
@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
       WHERE im.is_active = true
     `;
     const suratMasukResult = await queryWithTenant(tenantName, suratMasukQuery, [userId]);
-    
+
     // Query untuk menghitung total surat keluar (yang perlu di-approve oleh user)
     const suratKeluarQuery = `
-      SELECT 
+      SELECT
         COUNT(*) FILTER (WHERE oma.approver_id = $1) as pending_approval,
         COUNT(*) as total_count
       FROM outgoing_mails om
@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
       WHERE om.is_active = true
     `;
     const suratKeluarResult = await queryWithTenant(tenantName, suratKeluarQuery, [userId]);
-    
+
     // Query untuk menghitung total memo (yang perlu di-approve oleh user)
     const memoQuery = `
-      SELECT 
+      SELECT
         COUNT(*) FILTER (WHERE maf.approver_id = $1) as pending_approval,
         COUNT(*) as total_count
       FROM memos m
@@ -57,10 +57,10 @@ export async function GET(request: NextRequest) {
       WHERE m.is_active = true
     `;
     const memoResult = await queryWithTenant(tenantName, memoQuery, [userId]);
-    
+
     // Query untuk menghitung total notulensi (semua notulensi)
     const notulensiQuery = `
-      SELECT 
+      SELECT
         COUNT(*) FILTER (WHERE created_by = $1) as created_count,
         COUNT(*) as total_count
       FROM notulensi

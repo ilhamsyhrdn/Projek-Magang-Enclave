@@ -5,7 +5,7 @@ function generateTenantName(companyName: string): string {
   return companyName
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, '_') 
+    .replace(/\s+/g, '_')
     .replace(/_+/g, '_')
     .trim();
 }
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     const tenantName = generateTenantName(company_name);
-    
+
     const existingTenant = await pool.query(
       'SELECT tenant_name FROM superadmin.admins WHERE tenant_name = $1',
       [tenantName]

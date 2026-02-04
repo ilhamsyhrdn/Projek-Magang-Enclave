@@ -54,7 +54,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         'UPDATE divisions SET is_active = false, updated_at = NOW() WHERE id = $1',
         [id]
       );
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: 'Division is being used, status changed to inactive',
         soft_deleted: true
       });

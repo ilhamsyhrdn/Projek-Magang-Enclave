@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     }
 
     const query = `
-      SELECT 
+      SELECT
         os.id,
         os.position_id,
         p.name as position_name,
@@ -25,9 +25,9 @@ export async function GET(request: NextRequest) {
 
     const result = await queryWithTenant(tenantName, query);
 
-    return NextResponse.json({ 
-      success: true, 
-      data: result.rows 
+    return NextResponse.json({
+      success: true,
+      data: result.rows
     });
   } catch (error) {
     console.error('Error fetching organization structure:', error);

@@ -11,9 +11,9 @@ const pool = new Pool({
 
 async function setupUsers() {
   try {
-    console.log('=== Setting up users ===\n');
+    console.log('Setup users...\n');
     
-    // Insert Ilham - Approver
+    // Ilham - Approver
     const ilham = await pool.query(`
       INSERT INTO himatif.users 
       (employee_id, full_name, email, password_hash, role, tenant_name, is_active, created_at, updated_at)
@@ -22,9 +22,9 @@ async function setupUsers() {
       SET role = 'approver', password_hash = 'ilham123', full_name = 'Ilham', employee_id = '110001'
       RETURNING id, employee_id, full_name, email, role;
     `);
-    console.log('✓ Ilham (Approver):', ilham.rows[0]);
+    console.log('Ilham:', ilham.rows[0]);
 
-    // Insert Rayhan - Approver
+    // Rayhan - Approver
     const rayhan = await pool.query(`
       INSERT INTO himatif.users 
       (employee_id, full_name, email, password_hash, role, tenant_name, is_active, created_at, updated_at)
@@ -33,9 +33,9 @@ async function setupUsers() {
       SET role = 'approver', password_hash = 'rayhan123', full_name = 'Rayhan', employee_id = '110002'
       RETURNING id, employee_id, full_name, email, role;
     `);
-    console.log('✓ Rayhan (Approver):', rayhan.rows[0]);
+    console.log('Rayhan:', rayhan.rows[0]);
 
-    // Insert Candra - Approver
+    // Candra - Approver
     const candra = await pool.query(`
       INSERT INTO himatif.users 
       (employee_id, full_name, email, password_hash, role, tenant_name, is_active, created_at, updated_at)
@@ -44,9 +44,9 @@ async function setupUsers() {
       SET role = 'approver', password_hash = 'candra123', full_name = 'Candra', employee_id = '110003'
       RETURNING id, employee_id, full_name, email, role;
     `);
-    console.log('✓ Candra (Approver):', candra.rows[0]);
+    console.log('Candra:', candra.rows[0]);
 
-    // Insert Pegawai - General
+    // Pegawai - General
     const pegawai = await pool.query(`
       INSERT INTO himatif.users 
       (employee_id, full_name, email, password_hash, role, tenant_name, is_active, created_at, updated_at)
@@ -55,9 +55,9 @@ async function setupUsers() {
       SET role = 'general', password_hash = 'pegawai123', full_name = 'Pegawai 1', employee_id = '110005'
       RETURNING id, employee_id, full_name, email, role;
     `);
-    console.log('✓ Pegawai (General):', pegawai.rows[0]);
+    console.log('Pegawai:', pegawai.rows[0]);
 
-    console.log('\n=== All users created/updated successfully! ===');
+    console.log('\nSelesai!');
     
   } catch (error) {
     console.error('Error:', error.message);

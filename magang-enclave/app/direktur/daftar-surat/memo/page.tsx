@@ -224,7 +224,7 @@ export default function SuratMasukPage() {
                 <tbody>
                   {filteredData.length > 0 ? filteredData.map((row, index) => (
                     <tr
-                      key{index}
+                      key={index}
                       onClick={() => router.push(`/direktur/memo?id=${row.no}`)}
                       className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
                     >

@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     ];
 
     const testAccount = testAccounts.find(acc => acc.email === email && acc.password === password);
-    
+
     if (testAccount) {
       const accessToken = signToken({
         userId: testAccount.userId,
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 1, 
+        maxAge: 60 * 60 * 1,
         path: '/',
       });
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       const tenantsResult = await pool.query(
         'SELECT DISTINCT tenant_name FROM superadmin.admins WHERE is_active = true'
       );
-      
+
       const tenants = tenantsResult.rows.map(row => row.tenant_name);
 
       for (const tenantName of tenants) {
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordField = isAdmin ? user.password : user.password_hash;
-    
+
     if (passwordField !== password) {
       return NextResponse.json(
         { message: 'Email atau Password yang dimasukan salah, silahkan coba lagi' },

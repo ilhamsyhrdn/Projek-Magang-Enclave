@@ -59,7 +59,7 @@ const sampleNotifications = [
     isRead: false,
     createdAt: new Date('2026-01-27T14:00:00').toISOString(),
   },
-  
+
   // Notifications for Rayhan (Approver - userId: 2002)
   {
     id: 11,
@@ -105,7 +105,7 @@ const sampleNotifications = [
     isRead: false,
     createdAt: new Date('2026-01-27T15:30:00').toISOString(),
   },
-  
+
   // Notifications for Candra (Approver - userId: 2003)
   {
     id: 15,
@@ -151,7 +151,7 @@ const sampleNotifications = [
     isRead: true,
     createdAt: new Date('2026-01-26T16:00:00').toISOString(),
   },
-  
+
   // Notifications for Pegawai (User - userId: 3001)
   {
     id: 6,
@@ -175,7 +175,7 @@ const sampleNotifications = [
     isRead: false,
     createdAt: new Date('2026-01-27T15:00:00').toISOString(),
   },
-  
+
   // Notifications for Admin (userId: 1001)
   {
     id: 8,
@@ -215,13 +215,13 @@ const sampleNotifications = [
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
-    
+
     if (!token) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const payload = verifyToken(token);
-    
+
     // Filter notifications by userId
     const userNotifications = sampleNotifications.filter(
       notif => notif.userId === payload.userId
@@ -244,7 +244,7 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
-    
+
     if (!token) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
@@ -258,7 +258,7 @@ export async function DELETE(request: NextRequest) {
         .map((n, i) => (n.userId === payload.userId ? i : -1))
         .filter(i => i !== -1)
         .reverse();
-      
+
       indices.forEach(i => sampleNotifications.splice(i, 1));
     } else if (notificationIds && Array.isArray(notificationIds)) {
       // Delete specific notifications
@@ -266,7 +266,7 @@ export async function DELETE(request: NextRequest) {
         .map((n, i) => (notificationIds.includes(n.id) && n.userId === payload.userId ? i : -1))
         .filter(i => i !== -1)
         .reverse();
-      
+
       indices.forEach(i => sampleNotifications.splice(i, 1));
     }
 
@@ -286,7 +286,7 @@ export async function DELETE(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
-    
+
     if (!token) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }

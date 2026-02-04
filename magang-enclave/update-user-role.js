@@ -9,23 +9,26 @@ const pool = new Pool({
   password: '1964',
 });
 
-async function updateRayhanRole() {
+async function updateUserRole() {
+  const userEmail = 'user@mail.com'; // sesuaikan email
+  const newRole = 'approver'; // role: approver/adk/direktur/admin/general
+
   try {
-    console.log('Updating Rayhan role from secretary to approver...');
+    console.log(`Updating user role to ${newRole}...`);
     
     const result = await pool.query(`
       UPDATE himatif.users 
-      SET role = 'approver', 
+      SET role = $1, 
           updated_at = CURRENT_TIMESTAMP 
-      WHERE email = 'rayhan@mail.com'
+      WHERE email = $2
       RETURNING id, employee_id, full_name, email, role, is_active;
-    `);
+    `, [newRole, userEmail]);
 
     if (result.rows.length > 0) {
-      console.log('✓ Update successful!');
-      console.log('Updated user:', result.rows[0]);
+      console.log('Update berhasil!');
+      console.log('User:', result.rows[0]);
     } else {
-      console.log('✗ No user found with email rayhan@mail.com');
+      console.log(`User tidak ditemukan: ${userEmail}`);
     }
   } catch (error) {
     console.error('Error updating role:', error);
@@ -34,4 +37,4 @@ async function updateRayhanRole() {
   }
 }
 
-updateRayhanRole();
+updateUserRole();

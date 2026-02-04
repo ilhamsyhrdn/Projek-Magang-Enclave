@@ -12,14 +12,14 @@ export async function GET(request: NextRequest) {
     const users = await queryWithTenant(
       tenantName,
       `
-        SELECT 
-          u.id, 
-          u.employee_id, 
-          u.full_name, 
-          u.email, 
-          u.division_id, 
-          u.department_id, 
-          u.position_id, 
+        SELECT
+          u.id,
+          u.employee_id,
+          u.full_name,
+          u.email,
+          u.division_id,
+          u.department_id,
+          u.position_id,
           u.role,
           u.tenant_name,
           u.is_active,
@@ -78,9 +78,9 @@ export async function POST(request: NextRequest) {
 
     const result = await queryWithTenant(
       tenantName,
-      `INSERT INTO users 
-        (employee_id, full_name, email, password_hash, division_id, department_id, position_id, role, tenant_name) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+      `INSERT INTO users
+        (employee_id, full_name, email, password_hash, division_id, department_id, position_id, role, tenant_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [employee_id, full_name, email, password_hash, division_id, department_id, position_id, role, tenantName]
     );

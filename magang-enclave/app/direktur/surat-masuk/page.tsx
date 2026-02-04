@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import SidebarDirektur from "@/app/components/sidebar-direktur";
-import { Menu, Search, Filter, FileText, Download, History, X, Check, Clock, Archive, XCircle } from "lucide-react";
+import { Menu, Search, Filter, FileText, Download, History, X, Archive, FolderInput } from "lucide-react";
 import Image from "next/image";
 
 interface Surat {
@@ -182,42 +182,10 @@ export default function SuratMasukApproverPage() {
     }
   };
 
-  const handleApprove = () => {
+  const handleDisposisi = () => {
     if (selectedSurat) {
-      alert(`Surat "${selectedSurat.title}" telah disetujui`);
-      setSuratItems(prevItems =>
-        prevItems.map(item =>
-          item.id === selectedSurat.id ? { ...item, status: "Selesai", statusColor: "#10B981", statusBadge: "Selesai" } : item
-        )
-      );
-      setSelectedSurat(null);
-    }
-  };
-
-  const handlePending = () => {
-    if (selectedSurat) {
-      alert(`Surat "${selectedSurat.title}" ditandai pending`);
-      setSuratItems(prevItems =>
-        prevItems.map(item =>
-          item.id === selectedSurat.id ? { ...item, status: "Dalam Proses", statusColor: "#F59E0B", statusBadge: "Dalam Proses" } : item
-        )
-      );
-      setSelectedSurat(null);
-    }
-  };
-
-  const handleReject = () => {
-    if (selectedSurat) {
-      const reason = prompt("Alasan penolakan:");
-      if (reason) {
-        alert(`Surat "${selectedSurat.title}" ditolak dengan alasan: ${reason}`);
-        setSuratItems(prevItems =>
-          prevItems.map(item =>
-            item.id === selectedSurat.id ? { ...item, status: "Ditolak", statusColor: "#DC2626", statusBadge: "Ditolak" } : item
-          )
-        );
-        setSelectedSurat(null);
-      }
+      alert(`Disposisi surat "${selectedSurat.title}"`);
+      // Add disposisi logic here
     }
   };
 
@@ -423,29 +391,13 @@ export default function SuratMasukApproverPage() {
                       <History size={18} />
                       Log History
                     </button>
-                    <div className="ml-auto flex items-center gap-2">
-                      <button
-                        onClick={handleApprove}
-                        className="p-3 bg-[#10B981] text-white rounded-full hover:bg-[#059669] transition-colors shadow-md"
-                        title="Setujui"
-                      >
-                        <Check size={20} strokeWidth={2.5} />
-                      </button>
-                      <button
-                        onClick={handlePending}
-                        className="p-3 bg-[#F59E0B] text-white rounded-full hover:bg-[#D97706] transition-colors shadow-md"
-                        title="Pending"
-                      >
-                        <Clock size={20} strokeWidth={2.5} />
-                      </button>
-                      <button
-                        onClick={handleReject}
-                        className="p-3 bg-[#DC2626] text-white rounded-full hover:bg-[#B91C1C] transition-colors shadow-md"
-                        title="Tolak"
-                      >
-                        <XCircle size={20} strokeWidth={2.5} />
-                      </button>
-                    </div>
+                    <button
+                      onClick={handleDisposisi}
+                      className="ml-auto flex items-center gap-2 px-6 py-2.5 bg-[#F59E0B] text-white rounded-[10px] font-['Poppins'] text-sm font-medium hover:bg-[#D97706] transition-colors shadow-md"
+                    >
+                      <FolderInput size={18} />
+                      Disposisi
+                    </button>
                   </div>
 
                   {/* Document Preview */}

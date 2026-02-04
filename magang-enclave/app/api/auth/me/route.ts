@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     ];
 
     const testAccount = testAccounts.find(acc => acc.email === payload.email);
-    
+
     if (testAccount) {
       return NextResponse.json({
         success: true,
