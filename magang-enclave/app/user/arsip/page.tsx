@@ -7,7 +7,10 @@ export default function ArsipUserPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/user/arsip/surat-masuk");
+    // Only redirect if on base path without subpath
+    if (typeof window !== 'undefined' && window.location.pathname === '/user/arsip') {
+      router.replace("/user/arsip/surat-masuk");
+    }
   }, [router]);
 
   return null;

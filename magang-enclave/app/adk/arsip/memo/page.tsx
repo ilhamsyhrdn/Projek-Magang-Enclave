@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 export default function SuratMasukPage() {
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("surat-masuk");
+  const [activeTab, setActiveTab] = useState("memo");
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
