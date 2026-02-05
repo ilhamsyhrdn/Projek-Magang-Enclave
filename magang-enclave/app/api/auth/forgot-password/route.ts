@@ -1,94 +1,129 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queryWithTenant } from '@/lib/db';
-import nodemailer from 'nodemailer';
-
-function generateResetCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+import pool from '@/lib/db';
+import { sendResetEmail, isEmailVerificationEnabled } from '@/lib/email';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, tenantName } = await request.json();
+    const { email } = await request.json();
 
-    if (!email || !tenantName) {
+    if (!email) {
       return NextResponse.json(
-        { error: 'Email dan tenant name diperlukan' },
+        { error: 'Email harus diisi' },
         { status: 400 }
       );
     }
 
-    const users = await queryWithTenant(
-      tenantName,
-      'SELECT id, full_name, email FROM users WHERE email = $1 AND is_active = true',
-      [email]
-    );
+    const shouldSendEmail = isEmailVerificationEnabled();
+    console.log('[Forgot Password] Email verification:', shouldSendEmail ? 'enabled' : 'disabled');
 
-    if (users.length === 0) {
+    // Ambil semua tenant yang aktif
+    let tenants = [];
+    try {
+      const tenantsResult = await pool.query(
+        'SELECT DISTINCT tenant_name FROM superadmin.admins WHERE is_active = true'
+      );
+      tenants = tenantsResult.rows.map(row => row.tenant_name);
+      console.log('[Forgot Password] Found tenants:', tenants);
+    } catch (error) {
+      console.error('[Forgot Password] Error fetching tenants:', error);
       return NextResponse.json(
-        { error: 'Email tidak terdaftar' },
-        { status: 404 }
+        { error: 'Terjadi kesalahan saat memproses permintaan' },
+        { status: 500 }
       );
     }
 
-    const user = users[0];
-    const resetCode = generateResetCode();
+    // Cari user di semua tenant schemas
+    let foundUser = null;
+    let foundTenant = null;
 
-    const expiryTime = new Date();
-    expiryTime.setMinutes(expiryTime.getMinutes() + 15);
+    for (const tenantName of tenants) {
+      try {
+        const users = await queryWithTenant(
+          tenantName,
+          'SELECT * FROM users WHERE email = $1 AND is_active = true',
+          [email]
+        );
 
-    await queryWithTenant(
-      tenantName,
-      `UPDATE users
-       SET reset_token = $1, reset_token_expiry = $2
-       WHERE id = $3`,
-      [resetCode, expiryTime, user.id]
-    );
+        if (users.length > 0) {
+          foundUser = users[0];
+          foundTenant = tenantName;
+          console.log('[Forgot Password] User found in tenant:', tenantName);
+          break;
+        }
+      } catch (error) {
+        console.error(`[Forgot Password] Error checking tenant ${tenantName}:`, error);
+      }
+    }
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: user.email,
-      subject: 'Reset Password - Enclave E-office',
-      html: `
-        <div style="font-family: 'Poppins', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #4180a9;">Reset Password</h2>
-          <p>Halo ${user.full_name},</p>
-          <p>Kami menerima permintaan untuk mereset password akun Anda.</p>
-          <p>Gunakan kode berikut untuk mereset password Anda:</p>
+    // Return success meskipun user tidak ditemukan (security best practice)
+    if (!foundUser) {
+      console.log('[Forgot Password] User not found:', email);
+      return NextResponse.json({
+        success: true,
+        message: 'Jika email terdaftar, link reset akan dikirim',
+      });
+    }
 
-          <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0; border-radius: 10px;">
-            <h1 style="color: #4180a9; letter-spacing: 5px; margin: 0;">${resetCode}</h1>
-          </div>
+    // Generate token reset menggunakan crypto
+    const resetToken = crypto.randomBytes(32).toString('hex');
 
-          <p style="color: #666;">Kode ini akan kadaluarsa dalam <strong>15 menit</strong>.</p>
-          <p style="color: #666;">Jika Anda tidak meminta reset password, abaikan email ini.</p>
+    // Set expiry token (1 jam)
+    const expiryTime = new Date(Date.now() + 60 * 60 * 1000);
 
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-          <p style="color: #999; font-size: 12px;">
-            Email ini dikirim secara otomatis, mohon tidak membalas email ini.
-          </p>
-        </div>
-      `,
-    };
+    // Simpan token reset ke database
+    try {
+      await queryWithTenant(
+        foundTenant,
+        'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3',
+        [resetToken, expiryTime, foundUser.id]
+      );
+      console.log('[Forgot Password] Reset token saved successfully');
+    } catch (error) {
+      console.error('[Forgot Password] Error updating reset token:', error);
+      return NextResponse.json(
+        { error: 'Terjadi kesalahan saat menyimpan token reset' },
+        { status: 500 }
+      );
+    }
 
-    await transporter.sendMail(mailOptions);
+    // Buat link reset password
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const resetLink = `${baseUrl}/reset-password?email=${encodeURIComponent(email)}&token=${resetToken}`;
 
+    // Kirim email reset password
+    const emailSent = await sendResetEmail({
+      email,
+      fullName: foundUser.full_name || email,
+      resetLink,
+    });
+
+    if (emailSent) {
+      if (shouldSendEmail) {
+        console.log(`[Forgot Password] Reset email sent to: ${email}`);
+      } else {
+        console.log(`[Forgot Password] Reset link logged to console (development mode)`);
+      }
+    } else {
+      console.error('[Forgot Password] Failed to send reset email');
+      // Tetap return success tapi log error untuk monitoring
+    }
+
+    // Return response
     return NextResponse.json({
       success: true,
-      message: 'Kode reset password telah dikirim ke email Anda',
+      message: shouldSendEmail 
+        ? 'Link reset berhasil dikirim ke email Anda'
+        : 'Link reset berhasil dikirim (cek console server untuk link)',
+      // Hanya untuk development - di production hapus field ini
+      resetLink: !shouldSendEmail ? resetLink : undefined,
     });
 
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('[Forgot Password] Error:', error);
     return NextResponse.json(
-      { error: 'Terjadi kesalahan saat memproses permintaan' },
+      { error: 'Terjadi kesalahan server, silahkan coba lagi' },
       { status: 500 }
     );
   }

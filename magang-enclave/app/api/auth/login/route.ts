@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queryWithTenant } from '@/lib/db';
 import { signToken, signRefreshToken } from '@/lib/jwt';
+import { verifyPassword } from '@/lib/password';
 import pool from '@/lib/db';
 
 export async function POST(request: NextRequest) {
@@ -14,93 +15,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // HARDCODED TEST ACCOUNTS
-    const testAccounts = [
-      // Superadmin
-      { userId: 0, email: 'superadmin@superadmin.com', password: 'superadmin', role: 'superadmin', name: 'Super Administrator', tenantName: 'superadmin', employeeId: 'SUPERADMIN', redirectTo: '/dashboard-superAdmin' },
-      // Admin
-      { userId: 1001, email: 'himatif@admin.com', password: 'himatif123', role: 'admin', name: 'Admin Himatif', tenantName: 'himatif', employeeId: 'ADM001', redirectTo: '/admin/beranda' },
-      // Approvers
-      { userId: 2001, email: 'ilham@mail.com', password: 'ilham123', role: 'approver', name: 'Ilham', tenantName: 'himatif', employeeId: 'APP001', redirectTo: '/approver/beranda' },
-      { userId: 2002, email: 'rayhan@mail.com', password: 'rayhan123', role: 'approver', name: 'Rayhan', tenantName: 'himatif', employeeId: 'APP002', redirectTo: '/approver/beranda' },
-      { userId: 2003, email: 'candra@mail.com', password: 'candra123', role: 'approver', name: 'Candra', tenantName: 'himatif', employeeId: 'APP003', redirectTo: '/approver/beranda' },
-      // Direktur
-      { userId: 2004, email: 'direktur@mail.com', password: 'direktur123', role: 'direktur', name: 'Direktur', tenantName: 'himatif', employeeId: 'DIR001', redirectTo: '/direktur/beranda' },
-      // User/General
-      { userId: 3001, email: 'pegawai@mail.com', password: 'pegawai123', role: 'general', name: 'Pegawai', tenantName: 'himatif', employeeId: 'EMP001', redirectTo: '/user/beranda' },
-      // ADK
-      { userId: 4001, email: 'adk@mail.com', password: 'adk123', role: 'adk', name: 'ADK User', tenantName: 'himatif', employeeId: 'ADK001', redirectTo: '/adk/beranda' },
-    ];
-
-    const testAccount = testAccounts.find(acc => acc.email === email && acc.password === password);
-
-    if (testAccount) {
-      const accessToken = signToken({
-        userId: testAccount.userId,
-        email: testAccount.email,
-        tenantName: testAccount.tenantName,
-        role: testAccount.role,
-        employeeId: testAccount.employeeId,
-      });
-
-      const refreshToken = signRefreshToken({
-        userId: testAccount.userId,
-        email: testAccount.email,
-        tenantName: testAccount.tenantName,
-        role: testAccount.role,
-        employeeId: testAccount.employeeId,
-      });
-
-      const response = NextResponse.json({
-        success: true,
-        message: 'Login berhasil',
-        user: {
-          id: testAccount.userId,
-          email: testAccount.email,
-          fullName: testAccount.name,
-          tenantName: testAccount.tenantName,
-          role: testAccount.role,
-          employeeId: testAccount.employeeId,
-        },
-        redirectTo: testAccount.redirectTo,
-      });
-
-      response.cookies.set('token', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 1,
-        path: '/',
-      });
-
-      response.cookies.set('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 3,
-        path: '/',
-      });
-
-      return response;
-    }
-
     let user = null;
     let isAdmin = false;
+    let isSuperadmin = false;
 
+    // Cek di tabel superadmin.superadmin terlebih dahulu
     try {
-      const adminResult = await pool.query(
-        'SELECT * FROM superadmin.admins WHERE email = $1 AND is_active = true',
+      const superadminResult = await pool.query(
+        'SELECT * FROM superadmin.superadmin WHERE email = $1',
         [email]
       );
 
-      if (adminResult.rows.length > 0) {
-        user = adminResult.rows[0];
-        isAdmin = true;
+      if (superadminResult.rows.length > 0) {
+        user = superadminResult.rows[0];
+        // Verify password
+        const isValidPassword = await verifyPassword(password, user.password);
+        
+        if (!isValidPassword) {
+          return NextResponse.json(
+            { message: 'Email atau Password yang dimasukan salah, silahkan coba lagi' },
+            { status: 401 }
+          );
+        }
+        
+        isSuperadmin = true;
       }
     } catch (error) {
-      console.error('Error checking admin:', error);
+      console.error('Error checking superadmin:', error);
     }
 
+    // Jika bukan superadmin, cek di tabel superadmin.admins
+    if (!isSuperadmin) {
+      try {
+        const adminResult = await pool.query(
+          'SELECT * FROM superadmin.admins WHERE email = $1 AND is_active = true',
+          [email]
+        );
+
+        if (adminResult.rows.length > 0) {
+          user = adminResult.rows[0];
+          // Verify password
+          const isValidPassword = await verifyPassword(password, user.password);
+          
+          if (!isValidPassword) {
+            return NextResponse.json(
+              { message: 'Email atau Password yang dimasukan salah, silahkan coba lagi' },
+              { status: 401 }
+            );
+          }
+          
+          isAdmin = true;
+        }
+      } catch (error) {
+        console.error('Error checking admin:', error);
+      }
+    }
+
+    // Jika bukan admin dan bukan superadmin, cek di semua tenant schemas
     if (!user) {
       const tenantsResult = await pool.query(
         'SELECT DISTINCT tenant_name FROM superadmin.admins WHERE is_active = true'
@@ -117,8 +88,14 @@ export async function POST(request: NextRequest) {
           );
 
           if (users.length > 0) {
-            user = users[0];
-            break;
+            const userCandidate = users[0];
+            // Verify password
+            const isValidPassword = await verifyPassword(password, userCandidate.password_hash);
+            
+            if (isValidPassword) {
+              user = userCandidate;
+              break;
+            }
           }
         } catch (error) {
           console.error(`Error checking tenant ${tenantName}:`, error);
@@ -126,6 +103,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Jika user tidak ditemukan
     if (!user) {
       return NextResponse.json(
         { message: 'Email atau Password yang dimasukan salah, silahkan coba lagi' },
@@ -133,16 +111,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const passwordField = isAdmin ? user.password : user.password_hash;
-
-    if (passwordField !== password) {
-      return NextResponse.json(
-        { message: 'Email atau Password yang dimasukan salah, silahkan coba lagi' },
-        { status: 401 }
-      );
-    }
-
-    if (!isAdmin && user.tenant_name) {
+    // Update last_login untuk user biasa (bukan admin dan bukan superadmin)
+    if (!isAdmin && !isSuperadmin && user.tenant_name) {
       try {
         await queryWithTenant(
           user.tenant_name,
@@ -154,45 +124,88 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Tentukan redirect path berdasarkan role
     let redirectPath = '/user/beranda';
-    const userRole = user.role;
 
-    if (isAdmin) {
+    if (isSuperadmin) {
+      redirectPath = '/dashboard-superadmin';
+    } else if (isAdmin) {
       redirectPath = '/admin/beranda';
     } else {
+      const userRole = user.role;
+      
       if (userRole === 'approver' || userRole === 'secretary') {
         redirectPath = '/approver/beranda';
       } else if (userRole === 'general') {
         redirectPath = '/user/beranda';
+      } else if (userRole === 'direktur') {
+        redirectPath = '/direktur/beranda';
+      } else if (userRole === 'adk') {
+        redirectPath = '/adk/beranda';
       } else {
         redirectPath = '/user/beranda';
       }
     }
 
-    const accessToken = signToken({
-      userId: user.id,
-      email: user.email,
-      tenantName: isAdmin ? user.tenant_name : user.tenant_name,
-      role: userRole,
-      employeeId: isAdmin ? '' : (user.employee_id || ''),
-    });
+    // Buat access token dan refresh token
+    let accessToken, refreshToken, userData;
 
-    const refreshToken = signRefreshToken({
-      userId: user.id,
-      email: user.email,
-      tenantName: isAdmin ? user.tenant_name : user.tenant_name,
-      role: userRole,
-      employeeId: isAdmin ? '' : (user.employee_id || ''),
-    });
+    if (isSuperadmin) {
+      // Payload superadmin: hanya email dan role 'superadmin'
+      const tokenPayload = {
+        email: user.email,
+        role: 'superadmin',
+      };
 
-    const userData = {
-      id: user.id,
-      email: user.email,
-      fullName: isAdmin ? user.name : user.full_name,
-      tenantName: user.tenant_name,
-      role: userRole,
-      employeeId: isAdmin ? '' : (user.employee_id || ''),
-    };
+      accessToken = signToken({
+        userId: 0,
+        email: user.email,
+        tenantName: 'superadmin',
+        role: 'superadmin',
+        employeeId: 'SUPERADMIN',
+      });
+
+      refreshToken = signRefreshToken({
+        userId: 0,
+        email: user.email,
+        tenantName: 'superadmin',
+        role: 'superadmin',
+        employeeId: 'SUPERADMIN',
+      });
+
+      userData = {
+        email: user.email,
+        role: 'superadmin',
+      };
+    } else {
+      // Payload untuk admin dan user biasa
+      const userRole = user.role;
+
+      accessToken = signToken({
+        userId: user.id,
+        email: user.email,
+        tenantName: isAdmin ? user.tenant_name : user.tenant_name,
+        role: userRole,
+        employeeId: isAdmin ? '' : (user.employee_id || ''),
+      });
+
+      refreshToken = signRefreshToken({
+        userId: user.id,
+        email: user.email,
+        tenantName: isAdmin ? user.tenant_name : user.tenant_name,
+        role: userRole,
+        employeeId: isAdmin ? '' : (user.employee_id || ''),
+      });
+
+      userData = {
+        id: user.id,
+        email: user.email,
+        fullName: isAdmin ? user.name : user.full_name,
+        tenantName: user.tenant_name,
+        role: userRole,
+        employeeId: isAdmin ? '' : (user.employee_id || ''),
+      };
+    }
 
     const response = NextResponse.json({
       success: true,

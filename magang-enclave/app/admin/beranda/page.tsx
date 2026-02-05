@@ -162,7 +162,6 @@ export default function DashboardPage() {
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        notifications={notifications}
       />
 
       {/* Main Content */}

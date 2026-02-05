@@ -23,7 +23,7 @@ interface Division { id: number; name: string; }
 interface Department { id: number; name: string; division_id: number; }
 interface Position { id: number; name: string; }
 
-const roleOptions = ['approver', 'secretary', 'general'];
+const roleOptions = ['director', 'approver', 'secretary', 'general'];
 
 export default function PegawaiPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -71,11 +71,22 @@ export default function PegawaiPage() {
   const [isDivisionOpen, setIsDivisionOpen] = useState(false);
   const [isDepartmentOpen, setIsDepartmentOpen] = useState(false);
   const [isPositionOpen, setIsPositionOpen] = useState(false);
+  const [isRoleOpen, setIsRoleOpen] = useState(false);
 
   // Filter departemen berdasarkan divisi yang dipilih
   const filteredDepartments = formData.division_id
     ? departments.filter(d => d.division_id.toString() === formData.division_id)
-    : departments;
+    : [];
+
+  // Generate random password
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
 
   const fetchAllData = async () => {
     setIsLoading(true);
@@ -117,10 +128,11 @@ export default function PegawaiPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const requiredFields = ['full_name', 'email', 'division_id', 'department_id', 'position_id'];
+    // Field wajib: employee_id, full_name, email, position_id, role
+    const requiredFields = ['employee_id', 'full_name', 'email', 'position_id', 'role'];
 
     if (requiredFields.some(field => !formData[field as keyof typeof formData])) {
-      setError("Semua field wajib diisi.");
+      setError("Field wajib diisi: ID Pegawai, Nama Lengkap, Email, Jabatan, dan Role");
       return;
     }
 
@@ -131,19 +143,23 @@ export default function PegawaiPage() {
     setIsSubmitting(true);
     setError("");
 
-    // Auto-generate employee_id if not provided
-    const employeeId = formData.employee_id || String(Math.floor(Math.random() * 900) + 1).padStart(3, '0');
+    // Gunakan employee_id dari input user
+    const employeeId = formData.employee_id;
     const role = formData.role || 'general';
-    const password = formData.password_hash || 'default123';
+    const password = isEditMode ? formData.password_hash : generateRandomPassword();
 
     const url = isEditMode ? `/api/admin/users/${editId}` : '/api/admin/users';
     const method = isEditMode ? 'PUT' : 'POST';
 
+    // Kirim NULL jika divisi atau departemen kosong
     const body = {
       ...formData,
       employee_id: employeeId,
       role: role,
-      password_hash: password
+      password_hash: password,
+      division_id: formData.division_id ? parseInt(formData.division_id) : null,
+      department_id: formData.department_id ? parseInt(formData.department_id) : null,
+      position_id: formData.position_id ? parseInt(formData.position_id) : null,
     };
 
     try {
@@ -245,6 +261,7 @@ export default function PegawaiPage() {
     setIsDivisionOpen(false);
     setIsDepartmentOpen(false);
     setIsPositionOpen(false);
+    setIsRoleOpen(false);
   };
 
   const handleCloseConfirmModal = () => {
@@ -309,8 +326,8 @@ export default function PegawaiPage() {
                           <td className="px-4 py-3 font-['Poppins'] text-sm">{user.employee_id}</td>
                           <td className="px-4 py-3 font-['Poppins'] text-sm">{user.full_name}</td>
                           <td className="px-4 py-3 font-['Poppins'] text-sm">{user.email}</td>
-                          <td className="px-4 py-3 font-['Poppins'] text-sm">{user.division_name}</td>
-                          <td className="px-4 py-3 font-['Poppins'] text-sm">{user.department_name}</td>
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{user.division_name || '-'}</td>
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{user.department_name || '-'}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-center gap-2">
                               <button onClick={() => handleEdit(user)} className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors" title="Edit">
@@ -343,41 +360,43 @@ export default function PegawaiPage() {
             {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">{error}</div>}
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
-                {isEditMode && (
-                  <div>
-                    <input
-                      type="text"
-                      value={formData.employee_id}
-                      onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                      placeholder="ID Pegawai"
-                      className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9] bg-gray-100"
-                      disabled
-                    />
-                  </div>
-                )}
+                {/* ID Pegawai - Wajib diisi */}
+                <div>
+                  <input
+                    type="text"
+                    value={formData.employee_id}
+                    onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
+                    placeholder="ID Pegawai *"
+                    className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                {/* Nama Lengkap - Wajib */}
                 <div>
                   <input
                     type="text"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    placeholder="Nama lengkap pegawai"
+                    placeholder="Nama lengkap pegawai *"
                     className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
                     required
                     disabled={isSubmitting}
                   />
                 </div>
+                {/* Email - Wajib */}
                 <div>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="Email"
+                    placeholder="Email *"
                     className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
                     required
                     disabled={isSubmitting}
                   />
                 </div>
-                {/* Custom Dropdown Divisi */}
+                {/* Custom Dropdown Divisi*/}
                 <div className="relative">
                   <div
                     onClick={() => !isSubmitting && setIsDivisionOpen(!isDivisionOpen)}
@@ -394,6 +413,15 @@ export default function PegawaiPage() {
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setIsDivisionOpen(false)}></div>
                       <div className="division-dropdown absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-[15px] shadow-[0_4px_20px_rgba(0,0,0,0.12)] max-h-48 overflow-y-auto">
+                        <div
+                          onClick={() => {
+                            setFormData({ ...formData, division_id: "", department_id: "" });
+                            setIsDivisionOpen(false);
+                          }}
+                          className="px-4 py-3 hover:bg-[#f0f7ff] cursor-pointer font-['Poppins'] text-sm text-gray-700 transition-colors rounded-t-[15px]"
+                        >
+                          -
+                        </div>
                         {divisions.map((d, index) => (
                           <div
                             key={d.id}
@@ -402,9 +430,7 @@ export default function PegawaiPage() {
                               setIsDivisionOpen(false);
                             }}
                             className={`px-4 py-3 hover:bg-[#f0f7ff] cursor-pointer font-['Poppins'] text-sm text-gray-700 transition-colors ${
-                              index === 0 ? 'rounded-t-[15px]' : ''
-                            } ${
-                              index === divisions.length - 1 ? 'rounded-b-[15px]' : 'border-b border-gray-100'
+                              index === divisions.length - 1 ? 'rounded-b-[15px] border-b-0' : 'border-b border-gray-100'
                             }`}
                           >
                             {d.name}
@@ -414,7 +440,7 @@ export default function PegawaiPage() {
                     </>
                   )}
                 </div>
-                {/* Custom Dropdown Departemen */}
+                {/* Custom Dropdown Departemen*/}
                 <div className="relative">
                   <div
                     onClick={() => !isSubmitting && formData.division_id && setIsDepartmentOpen(!isDepartmentOpen)}
@@ -423,7 +449,10 @@ export default function PegawaiPage() {
                     }`}
                   >
                     <span className={formData.department_id ? "text-gray-900" : "text-gray-500"}>
-                      {formData.department_id ? filteredDepartments.find(d => d.id.toString() === formData.department_id)?.name : "Departemen"}
+                      {formData.division_id 
+                        ? (formData.department_id ? filteredDepartments.find(d => d.id.toString() === formData.department_id)?.name : "Departemen")
+                        : "Departemen"
+                      }
                     </span>
                     <svg className={`fill-current h-4 w-4 text-gray-400 transition-transform ${isDepartmentOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                       <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
@@ -433,6 +462,15 @@ export default function PegawaiPage() {
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setIsDepartmentOpen(false)}></div>
                       <div className="department-dropdown absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-[15px] shadow-[0_4px_20px_rgba(0,0,0,0.12)] max-h-48 overflow-y-auto">
+                        <div
+                          onClick={() => {
+                            setFormData({ ...formData, department_id: "" });
+                            setIsDepartmentOpen(false);
+                          }}
+                          className="px-4 py-3 hover:bg-[#f0f7ff] cursor-pointer font-['Poppins'] text-sm text-gray-700 transition-colors rounded-t-[15px]"
+                        >
+                          -
+                        </div>
                         {filteredDepartments.length > 0 ? (
                           filteredDepartments.map((d, index) => (
                             <div
@@ -442,8 +480,6 @@ export default function PegawaiPage() {
                                 setIsDepartmentOpen(false);
                               }}
                               className={`px-4 py-3 hover:bg-[#f0f7ff] cursor-pointer font-['Poppins'] text-sm text-gray-700 transition-colors ${
-                                index === 0 ? 'rounded-t-[15px]' : ''
-                              } ${
                                 index === filteredDepartments.length - 1 ? 'rounded-b-[15px]' : 'border-b border-gray-100'
                               }`}
                             >
@@ -459,14 +495,14 @@ export default function PegawaiPage() {
                     </>
                   )}
                 </div>
-                {/* Custom Dropdown Jabatan */}
+                {/* Custom Dropdown Jabatan - Wajib */}
                 <div className="relative">
                   <div
                     onClick={() => !isSubmitting && setIsPositionOpen(!isPositionOpen)}
                     className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm text-gray-500 focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9] bg-white cursor-pointer flex items-center justify-between hover:border-[#4180a9] transition-colors"
                   >
                     <span className={formData.position_id ? "text-gray-900" : "text-gray-500"}>
-                      {formData.position_id ? positions.find(p => p.id.toString() === formData.position_id)?.name : "Jabatan"}
+                      {formData.position_id ? positions.find(p => p.id.toString() === formData.position_id)?.name : "Jabatan *"}
                     </span>
                     <svg className={`fill-current h-4 w-4 text-gray-400 transition-transform ${isPositionOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                       <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
@@ -490,6 +526,43 @@ export default function PegawaiPage() {
                             }`}
                           >
                             {p.name}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {/* Custom Dropdown Role - Wajib */}
+                <div className="relative">
+                  <div
+                    onClick={() => !isSubmitting && setIsRoleOpen(!isRoleOpen)}
+                    className="w-full h-12 px-4 border border-gray-300 rounded-full font-['Poppins'] text-sm text-gray-500 focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9] bg-white cursor-pointer flex items-center justify-between hover:border-[#4180a9] transition-colors"
+                  >
+                    <span className={formData.role ? "text-gray-900" : "text-gray-500"}>
+                      {formData.role ? formData.role.charAt(0).toUpperCase() + formData.role.slice(1) : "Role *"}
+                    </span>
+                    <svg className={`fill-current h-4 w-4 text-gray-400 transition-transform ${isRoleOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                    </svg>
+                  </div>
+                  {isRoleOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setIsRoleOpen(false)}></div>
+                      <div className="role-dropdown absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-[15px] shadow-[0_4px_20px_rgba(0,0,0,0.12)] max-h-48 overflow-y-auto">
+                        {roleOptions.map((role, index) => (
+                          <div
+                            key={role}
+                            onClick={() => {
+                              setFormData({ ...formData, role: role });
+                              setIsRoleOpen(false);
+                            }}
+                            className={`px-4 py-3 hover:bg-[#f0f7ff] cursor-pointer font-['Poppins'] text-sm text-gray-700 transition-colors ${
+                              index === 0 ? 'rounded-t-[15px]' : ''
+                            } ${
+                              index === roleOptions.length - 1 ? 'rounded-b-[15px]' : 'border-b border-gray-100'
+                            }`}
+                          >
+                            {role.charAt(0).toUpperCase() + role.slice(1)}
                           </div>
                         ))}
                       </div>

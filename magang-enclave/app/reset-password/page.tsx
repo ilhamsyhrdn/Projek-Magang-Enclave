@@ -1,4 +1,4 @@
-// app/reset-password/page.tsx
+//magang-enclave/app/reset-password/page.tsx
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
@@ -10,8 +10,7 @@ function ResetPasswordForm() {
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
-  const [tenantName, setTenantName] = useState("");
-  const [resetCode, setResetCode] = useState("");
+  const [token, setToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,14 +18,20 @@ function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [isValidToken, setIsValidToken] = useState(true);
 
   useEffect(() => {
-    // Ambil email dan tenant dari URL params
+    // Ambil email dan token dari URL params
     const emailParam = searchParams.get('email');
-    const tenantParam = searchParams.get('tenant');
+    const tokenParam = searchParams.get('token');
 
     if (emailParam) setEmail(emailParam);
-    if (tenantParam) setTenantName(tenantParam);
+    if (tokenParam) {
+      setToken(tokenParam);
+    } else {
+      setIsValidToken(false);
+      setError("Token tidak ditemukan. Silakan minta link reset baru.");
+    }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,9 +61,8 @@ function ResetPasswordForm() {
         },
         body: JSON.stringify({
           email,
-          resetCode,
+          token,
           newPassword,
-          tenantName,
         }),
       });
 
@@ -82,6 +86,32 @@ function ResetPasswordForm() {
     }
   };
 
+  if (!isValidToken) {
+    return (
+      <div className="bg-white relative w-full min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex flex-col items-center gap-4">
+            <AlertCircle className="text-red-600" size={48} />
+            <div className="text-center">
+              <h2 className="font-['Poppins'] font-semibold text-red-600 text-lg mb-2">
+                Link Tidak Valid
+              </h2>
+              <p className="font-['Poppins'] text-sm text-gray-600 mb-4">
+                Link reset password tidak valid atau telah expired.
+              </p>
+              <button
+                onClick={() => router.push('/lupa-password')}
+                className="text-[#4180a9] font-['Poppins'] text-sm hover:underline"
+              >
+                Minta Link Reset Baru
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white relative w-full min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -91,7 +121,7 @@ function ResetPasswordForm() {
               Atur Ulang Kata Sandi
             </h1>
             <p className="font-['Poppins'] font-normal text-[#424141] text-base">
-              Masukkan kode yang dikirim ke email Anda
+              Masukkan password baru Anda
             </p>
           </div>
 
@@ -107,26 +137,6 @@ function ResetPasswordForm() {
                 className="w-full h-14 px-4 border border-gray-200 bg-gray-50 rounded-[10px] text-base font-['Poppins'] cursor-not-allowed"
                 disabled
               />
-            </div>
-
-            {/* Kode Reset */}
-            <div className="space-y-2">
-              <label className="font-['Poppins'] font-normal text-[#424141] text-sm block">
-                Kode Reset <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="text"
-                value={resetCode}
-                onChange={(e) => setResetCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="w-full h-14 px-4 border border-gray-300 rounded-[10px] text-base font-['Poppins'] text-center tracking-widest text-2xl font-semibold focus:outline-none focus:border-[#4180a9] focus:ring-2 focus:ring-[#4180a9]/20"
-                placeholder="000000"
-                maxLength={6}
-                required
-                disabled={isLoading}
-              />
-              <p className="text-xs text-gray-500 font-['Poppins'] text-center">
-                Masukkan kode 6 digit yang dikirim ke email Anda
-              </p>
             </div>
 
             {/* Password Baru */}
@@ -219,15 +229,7 @@ function ResetPasswordForm() {
               </div>
             )}
 
-            <div className="text-center space-y-2">
-              <button
-                type="button"
-                onClick={() => router.push('/lupa-password')}
-                className="font-['Poppins'] text-[#424141] text-sm hover:text-[#4180a9] transition-colors block w-full"
-                disabled={isLoading}
-              >
-                Belum menerima kode? Kirim ulang
-              </button>
+            <div className="text-center">
               <button
                 type="button"
                 onClick={() => router.push('/login')}

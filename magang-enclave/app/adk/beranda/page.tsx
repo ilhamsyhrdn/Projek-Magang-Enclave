@@ -8,7 +8,7 @@ import { Menu, ArrowUpRight } from "lucide-react";
 import { useAuth, useRequireAuth } from '@/lib/auth-context';
 
 export default function BerandaAdkPage() {
-  useRequireAuth(['adk']);
+  useRequireAuth(['secretary']);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [stats, setStats] = useState({
     suratMasuk: { created: 0, total: 0 },

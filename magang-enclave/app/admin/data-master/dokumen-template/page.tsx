@@ -2,24 +2,41 @@
 
 import { useState, useEffect } from "react";
 import Sidebar from "@/app/components/sidebar-admin";
-import { Search, Plus, Settings, FileText, StickyNote, Clipboard, Upload, Calendar, X } from "lucide-react";
+import { Search, Plus, Settings, FileText, StickyNote, Clipboard, X, Edit2, Trash2 } from "lucide-react";
 import RichTextEditor from "@/app/components/RichTextEditor";
 
 interface Template {
   id: number;
   name: string;
   description: string;
-  type: string;
+  category_id: number;
+  category_name: string | null;
+  division_id: number | null;
+  content: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  code: string;
+  description: string | null;
+}
+
+interface Division {
+  id: number;
+  name: string;
+  description: string | null;
 }
 
 type TabType = 'surat-keluar' | 'memo' | 'notulensi';
 
 interface FormData {
-  module: string;
   name: string;
-  division: string;
   description: string;
-  category: string;
+  category_id: string;
+  division_id: string;
   content: string;
 }
 
@@ -27,30 +44,89 @@ export default function DokumenTemplatePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('surat-keluar');
   const [searchQuery, setSearchQuery] = useState("");
-  const [allTemplates, setAllTemplates] = useState<Template[]>([
-    { id: 1, name: "Surat Peminjaman", description: "Internal", type: "surat-keluar" },
-    { id: 2, name: "Surat Permohonan", description: "Eksternal", type: "surat-keluar" },
-    { id: 3, name: "Surat Peminjaman Dana", description: "HRD", type: "surat-keluar" },
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [divisions, setDivisions] = useState<Division[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState<TabType | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
-    module: '',
     name: '',
-    division: '',
     description: '',
-    category: '',
+    category_id: '',
+    division_id: '',
     content: ''
   });
 
-  const templates = allTemplates.filter(t => t.type === activeTab);
+  const modules = [
+    { id: 'surat-keluar' as TabType, label: 'Surat Keluar', icon: FileText },
+    { id: 'memo' as TabType, label: 'Memo', icon: StickyNote },
+    { id: 'notulensi' as TabType, label: 'Notulensi', icon: Clipboard },
+  ];
 
-  const fetchTemplates = () => {
-    setIsLoading(false);
-    // Data sudah ada di state allTemplates
+  const tabs = [
+    { id: 'surat-keluar' as TabType, label: 'Surat Keluar' },
+    { id: 'memo' as TabType, label: 'Memo' },
+    { id: 'notulensi' as TabType, label: 'Notulensi' },
+  ];
+
+  // Fetch templates filtered by active tab
+  const fetchTemplates = async () => {
+    try {
+      const response = await fetch(`/api/admin/templates?module_type=${activeTab}&search=${searchQuery}`);
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error || 'Gagal mengambil data template');
+
+      setTemplates(data.data || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+    }
   };
+
+  // Fetch all categories
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/admin/categories');
+      const data = await response.json();
+
+      if (!response.ok) throw new Error('Gagal mengambil data kategori');
+
+      setCategories(data.categories || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal mengambil data kategori');
+    }
+  };
+
+  // Fetch divisions
+  const fetchDivisions = async () => {
+    try {
+      const response = await fetch('/api/admin/divisions');
+      const data = await response.json();
+
+      if (!response.ok) throw new Error('Gagal mengambil data divisi');
+
+      setDivisions(data.divisions || []);
+    } catch (err) {
+      console.error('Error fetching divisions:', err);
+    }
+  };
+
+  useEffect(() => {
+    setIsLoading(true);
+    Promise.all([fetchTemplates(), fetchCategories(), fetchDivisions()])
+      .finally(() => setIsLoading(false));
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [searchQuery]);
 
   const handleConfigLevel = (template: Template) => {
     alert(`Config Level untuk: ${template.name}`);
@@ -59,83 +135,147 @@ export default function DokumenTemplatePage() {
   const handleSubmitModule = () => {
     if (selectedModule) {
       const moduleName = modules.find(m => m.id === selectedModule)?.label || '';
-      setFormData({ ...formData, module: moduleName });
-      setIsModalOpen(false);
       setIsFormOpen(true);
+      setIsModalOpen(false);
     }
   };
 
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setSelectedModule(null);
+    setIsEditMode(false);
+    setEditId(null);
     setFormData({
-      module: '',
       name: '',
-      division: '',
       description: '',
-      category: '',
+      category_id: '',
+      division_id: '',
       content: ''
     });
+    setError("");
   };
 
-  const handleSubmitForm = () => {
-    // Validasi form
-    if (!formData.name || !formData.division || !formData.category) {
-      alert('Mohon lengkapi semua field yang wajib diisi!');
+  const handleSubmitForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    // Validation
+    if (!formData.name || !formData.description || !formData.category_id) {
+      setError('Mohon lengkapi semua field yang wajib diisi!');
       return;
     }
 
-    // Buat template baru dengan ID unik
-    const newTemplate: Template = {
-      id: Date.now(), // Gunakan timestamp untuk ID unik
-      name: formData.name,
-      description: formData.division,
-      type: selectedModule || activeTab // Gunakan selectedModule yang dipilih
-    };
+    setIsSubmitting(true);
 
-    // Tambahkan ke allTemplates
-    setAllTemplates([...allTemplates, newTemplate]);
+    try {
+      const url = isEditMode
+        ? `/api/admin/templates/${editId}?module_type=${selectedModule || activeTab}`
+        : '/api/admin/templates';
+      const method = isEditMode ? 'PUT' : 'POST';
 
-    console.log('Template berhasil ditambahkan:', {
-      ...formData,
-      module: selectedModule,
-      savedTo: selectedModule
-    });
+      const body = {
+        name: formData.name,
+        description: formData.description,
+        module_type: selectedModule || activeTab,
+        category_id: parseInt(formData.category_id),
+        division_id: formData.division_id ? parseInt(formData.division_id) : null,
+        content: formData.content || null,
+      };
 
-    alert(`Template "${formData.name}" berhasil ditambahkan ke ${formData.module}!`);
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-    // Reset form dan tutup modal
-    handleCloseForm();
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Gagal menyimpan template');
 
-    // Pindah ke tab yang sesuai dengan module yang dipilih
-    if (selectedModule) {
-      setActiveTab(selectedModule);
+      setSuccess(isEditMode ? 'Template berhasil diperbarui!' : 'Template berhasil ditambahkan!');
+
+      await fetchTemplates();
+      handleCloseForm();
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan';
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const modules = [
-    { id: 'surat-keluar' as TabType, label: 'Surat Keluar', icon: FileText },
-    { id: 'memo' as TabType, label: 'Memo', icon: StickyNote },
-    { id: 'notulensi' as TabType, label: 'Notulensi', icon: Clipboard },
-  ];
+  const handleEdit = (template: Template) => {
+    setFormData({
+      name: template.name,
+      description: template.description,
+      category_id: template.category_id.toString(),
+      division_id: template.division_id?.toString() || '',
+      content: template.content || '',
+    });
+    setEditId(template.id);
+    setIsEditMode(true);
+    setSelectedModule(activeTab);
+    setIsFormOpen(true);
+  };
 
+  const handleDelete = async (id: number) => {
+    if (confirm('Apakah Anda yakin ingin menghapus template ini?')) {
+      try {
+        const response = await fetch(`/api/admin/templates/${id}?module_type=${activeTab}`, {
+          method: 'DELETE',
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Gagal menghapus template');
+
+        setSuccess('Template berhasil dihapus!');
+        await fetchTemplates();
+
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(""), 3000);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Gagal menghapus template';
+        setError(errorMessage);
+      }
+    }
+  };
+
+  // Filter templates by search query
   const filteredTemplates = templates.filter(template =>
     template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    template.description.toLowerCase().includes(searchQuery.toLowerCase())
+    template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (template.category_name && template.category_name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const tabs = [
-    { id: 'surat-keluar' as TabType, label: 'Surat Keluar' },
-    { id: 'memo' as TabType, label: 'Memo' },
-    { id: 'notulensi' as TabType, label: 'Notulensi' },
-  ];
+  const getDivisionName = (divisionId: number | null) => {
+    if (!divisionId) return '-';
+    const division = divisions.find(d => d.id === divisionId);
+    return division ? division.name : '-';
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
       <div className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-[269px]' : 'lg:ml-0'}`}>
-        <div className="px-6 lg:px-10 py-10">
+        {/* Mobile Menu Button */}
+        <div className="sticky top-0 z-30 bg-gray-50 py-4 px-6 lg:px-10">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-100 transition-colors border border-gray-200"
+          >
+            <span className="sr-only">Toggle menu</span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Main Content */}
+        <div className="px-6 lg:px-10 pb-10">
           {/* Page Title */}
           <div className="mb-8">
             <h1 className="font-['Poppins'] font-medium text-[#1e1e1e] text-3xl md:text-[40px]">
@@ -145,6 +285,18 @@ export default function DokumenTemplatePage() {
 
           {/* Content Card */}
           <div className="bg-white rounded-[25px] shadow-[0px_0px_15px_0px_rgba(0,0,0,0.15)] p-6 md:p-8">
+            {/* Error & Success Messages */}
+            {error && (
+              <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                {success}
+              </div>
+            )}
+
             {/* Tabs */}
             <div className="flex gap-8 mb-6 border-b border-gray-200">
               {tabs.map(tab => (
@@ -173,7 +325,7 @@ export default function DokumenTemplatePage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari surat, no surat..."
+                  placeholder="Cari template..."
                   className="w-full h-12 pl-12 pr-4 border border-gray-300 rounded-[10px] font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
                 />
               </div>
@@ -198,13 +350,15 @@ export default function DokumenTemplatePage() {
                       <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left rounded-tl-lg">No</th>
                       <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Nama Dokumen</th>
                       <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Deskripsi</th>
-                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center rounded-tr-lg">Action</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Kategori</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-left">Divisi</th>
+                      <th className="font-['Poppins'] font-medium text-xs md:text-sm py-3 px-4 text-center rounded-tr-lg">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredTemplates.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                        <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                           Tidak ada data template
                         </td>
                       </tr>
@@ -214,13 +368,30 @@ export default function DokumenTemplatePage() {
                           <td className="px-4 py-3 font-['Poppins'] text-sm">{index + 1}</td>
                           <td className="px-4 py-3 font-['Poppins'] text-sm">{template.name}</td>
                           <td className="px-4 py-3 font-['Poppins'] text-sm">{template.description}</td>
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{template.category_name || '-'}</td>
+                          <td className="px-4 py-3 font-['Poppins'] text-sm">{getDivisionName(template.division_id)}</td>
                           <td className="px-4 py-3">
-                            <div className="flex items-center justify-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleEdit(template)}
+                                className="p-2 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <Edit2 size={18} />
+                              </button>
                               <button
                                 onClick={() => handleConfigLevel(template)}
-                                className="flex items-center gap-2 px-4 py-2 bg-[#4180a9] text-white rounded-lg text-sm font-['Poppins'] hover:bg-[#356890] transition-colors"
+                                className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Config Level"
                               >
-                                <Settings size={16} /> Config Level
+                                <Settings size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(template.id)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Hapus"
+                              >
+                                <Trash2 size={18} />
                               </button>
                             </div>
                           </td>
@@ -294,13 +465,13 @@ export default function DokumenTemplatePage() {
         </div>
       )}
 
-      {/* Form Tambah Template */}
+      {/* Form Tambah/Edit Template */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div className="bg-white border-b border-gray-200 px-8 py-6 rounded-t-[20px] flex justify-between items-center flex-shrink-0">
               <h2 className="font-['Poppins'] font-semibold text-2xl text-gray-900">
-                Tambah Template
+                {isEditMode ? 'Edit Template' : 'Tambah Template'}
               </h2>
               <button onClick={handleCloseForm} className="text-gray-500 hover:text-gray-700">
                 <X size={24} />
@@ -308,19 +479,27 @@ export default function DokumenTemplatePage() {
             </div>
 
             <div className="p-8 space-y-6 overflow-y-auto flex-1">
-              {/* Module & Nama Dokumen */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {error && (
+                <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmitForm} className="space-y-6">
+                {/* Module (Read-only) */}
                 <div>
                   <label className="block font-['Poppins'] font-medium text-gray-700 mb-2">
                     Module<span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    value={formData.module}
+                    value={selectedModule ? modules.find(m => m.id === selectedModule)?.label : ''}
                     disabled
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 font-['Poppins'] text-sm"
                   />
                 </div>
+
+                {/* Nama Dokumen */}
                 <div>
                   <label className="block font-['Poppins'] font-medium text-gray-700 mb-2">
                     Nama Dokumen<span className="text-red-500">*</span>
@@ -331,69 +510,76 @@ export default function DokumenTemplatePage() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Masukan nama dokumen..."
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
+                    required
+                    disabled={isSubmitting}
                   />
                 </div>
-              </div>
 
-              {/* Divisi */}
-              <div>
-                <label className="block font-['Poppins'] font-medium text-gray-700 mb-2">
-                  Divisi<span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.division}
-                  onChange={(e) => setFormData({ ...formData, division: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
-                >
-                  <option value="">Pilih Divisi</option>
-                  <option value="internal">Internal</option>
-                  <option value="eksternal">Eksternal</option>
-                  <option value="hrd">HRD</option>
-                </select>
-              </div>
+                {/* Divisi */}
+                <div>
+                  <label className="block font-['Poppins'] font-medium text-gray-700 mb-2">
+                    Divisi
+                  </label>
+                  <select
+                    value={formData.division_id}
+                    onChange={(e) => setFormData({ ...formData, division_id: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
+                    disabled={isSubmitting}
+                  >
+                    <option value="">Pilih Divisi (Opsional)</option>
+                    {divisions.map(division => (
+                      <option key={division.id} value={division.id}>{division.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Deskripsi */}
-              <div>
-                <label className="block font-['Poppins'] font-medium text-gray-700 mb-2">
-                  Deskripsi<span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Masukan Deskripsi...."
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9] resize-none"
-                />
-              </div>
+                {/* Deskripsi */}
+                <div>
+                  <label className="block font-['Poppins'] font-medium text-gray-700 mb-2">
+                    Deskripsi<span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Masukan Deskripsi...."
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9] resize-none"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
 
-              {/* Kategori */}
-              <div>
-                <label className="block font-['Poppins'] font-medium text-gray-700 mb-2">
-                  Kategori<span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
-                >
-                  <option value="">Pilih kategori...</option>
-                  <option value="umum">Umum</option>
-                  <option value="penting">Penting</option>
-                  <option value="rahasia">Rahasia</option>
-                </select>
-              </div>
+                {/* Kategori */}
+                <div>
+                  <label className="block font-['Poppins'] font-medium text-gray-700 mb-2">
+                    Kategori<span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.category_id}
+                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg font-['Poppins'] text-sm focus:outline-none focus:border-[#4180a9] focus:ring-1 focus:ring-[#4180a9]"
+                    required
+                    disabled={isSubmitting}
+                  >
+                    <option value="">Pilih kategori...</option>
+                    {categories.map(category => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Isi Surat */}
-              <div>
-                <label className="block font-['Poppins'] font-medium text-gray-700 mb-2">
-                  Isi Surat
-                </label>
-                <RichTextEditor
-                  value={formData.content}
-                  onChange={(content) => setFormData({ ...formData, content })}
-                  placeholder="Mulai menulis isi surat..."
-                />
-              </div>
+                {/* Isi Surat */}
+                <div>
+                  <label className="block font-['Poppins'] font-medium text-gray-700 mb-2">
+                    Isi Surat
+                  </label>
+                  <RichTextEditor
+                    value={formData.content}
+                    onChange={(content) => setFormData({ ...formData, content })}
+                    placeholder="Mulai menulis isi surat..."
+                  />
+                </div>
+              </form>
             </div>
 
             {/* Buttons - Fixed at bottom */}
@@ -401,14 +587,16 @@ export default function DokumenTemplatePage() {
               <button
                 onClick={handleCloseForm}
                 className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg font-['Poppins'] font-medium text-sm hover:bg-red-700 transition-colors"
+                disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitForm}
-                className="flex-1 px-6 py-3 bg-[#4180a9] text-white rounded-lg font-['Poppins'] font-medium text-sm hover:bg-[#356890] transition-colors"
+                className="flex-1 px-6 py-3 bg-[#4180a9] text-white rounded-lg font-['Poppins'] font-medium text-sm hover:bg-[#356890] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
               >
-                Buat
+                {isSubmitting ? 'Menyimpan...' : isEditMode ? 'Update' : 'Buat'}
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-// app/lupa-password/page.tsx
+//magang-enclave/app/lupa-password/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -8,7 +8,6 @@ import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 export default function LupaPasswordPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [tenantName, setTenantName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -27,11 +26,21 @@ export default function LupaPasswordPage() {
         },
         body: JSON.stringify({
           email,
-          tenantName,
         }),
       });
 
-      const data = await response.json();
+      // Cek apakah response adalah JSON
+      const contentType = response.headers.get('content-type');
+      let data;
+
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // Jika bukan JSON, baca sebagai text untuk debug
+        const text = await response.text();
+        console.error('[Lupa Password] Non-JSON response:', text);
+        throw new Error('Terjadi kesalahan pada server');
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Terjadi kesalahan');
@@ -39,12 +48,8 @@ export default function LupaPasswordPage() {
 
       setSuccess(true);
 
-      // Redirect ke halaman reset password setelah 2 detik
-      setTimeout(() => {
-        router.push(`/reset-password?email=${encodeURIComponent(email)}&tenant=${encodeURIComponent(tenantName)}`);
-      }, 2000);
-
     } catch (err) {
+      console.error('[Lupa Password] Error:', err);
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
     } finally {
       setIsLoading(false);
@@ -60,26 +65,11 @@ export default function LupaPasswordPage() {
               Lupa Password
             </h1>
             <p className="font-['Poppins'] font-normal text-[#424141] text-base">
-              Masukkan email Anda untuk mendapatkan kode reset password
+              Masukkan email Anda untuk menerima link reset password
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="font-['Poppins'] font-normal text-[#424141] text-sm block">
-                Nama Perusahaan <span className="text-red-600">*</span>
-              </label>
-              <input
-                type="text"
-                value={tenantName}
-                onChange={(e) => setTenantName(e.target.value)}
-                className="w-full h-14 px-4 border border-gray-300 rounded-[10px] text-base font-['Poppins'] focus:outline-none focus:border-[#4180a9] focus:ring-2 focus:ring-[#4180a9]/20"
-                placeholder="Contoh: enclave"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
             <div className="space-y-2">
               <label className="font-['Poppins'] font-normal text-[#424141] text-sm block">
                 Email <span className="text-red-600">*</span>
@@ -106,7 +96,7 @@ export default function LupaPasswordPage() {
                   Mengirim...
                 </>
               ) : (
-                'Kirim Kode Reset'
+                'Kirim Link Reset'
               )}
             </button>
 
@@ -114,7 +104,14 @@ export default function LupaPasswordPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-                <p className="text-red-600 text-sm font-['Poppins']">{error}</p>
+                <div className="flex-1">
+                  <p className="text-red-600 text-sm font-['Poppins']">{error}</p>
+                  {process.env.NODE_ENV === 'development' && (
+                    <p className="text-red-500 text-xs font-['Poppins'] mt-2">
+                      Cek console browser untuk detail error
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
@@ -124,10 +121,10 @@ export default function LupaPasswordPage() {
                 <CheckCircle2 className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
                 <div>
                   <p className="text-green-600 text-sm font-['Poppins'] font-semibold">
-                    Kode reset telah dikirim!
+                    Link reset telah dikirim!
                   </p>
                   <p className="text-green-600 text-xs font-['Poppins'] mt-1">
-                    Silakan cek email Anda. Mengalihkan ke halaman reset...
+                    Silakan cek email Anda dan klik link reset password.
                   </p>
                 </div>
               </div>

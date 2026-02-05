@@ -196,6 +196,7 @@ export async function createTenantSchema(tenantName: string) {
         "current_approval_level" INTEGER DEFAULT 0,
         "sent_date" DATE,
         "notes" TEXT,
+        "is_read" BOOLEAN DEFAULT false,
         "created_by" INTEGER NOT NULL,
         "updated_by" INTEGER,
         "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

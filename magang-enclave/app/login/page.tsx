@@ -1,3 +1,4 @@
+//magang-enclave\app\login\page.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -202,14 +203,19 @@ export default function LoginPage() {
 
       switch (user.role) {
         case 'superadmin':
-          redirectPath = '/dashboard-superAdmin';
+          redirectPath = '/dashboard-superadmin';
           break;
         case 'admin':
           redirectPath = '/admin/beranda';
           break;
+        case 'director':
+          redirectPath = '/direktur/beranda';
+          break;
         case 'approver':
-        case 'secretary':
           redirectPath = '/approver/beranda';
+          break;
+        case 'secretary':
+          redirectPath = '/adk/beranda';
           break;
         case 'general':
           redirectPath = '/user/beranda';
