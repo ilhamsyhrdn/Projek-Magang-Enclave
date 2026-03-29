@@ -54,7 +54,7 @@ export async function POST(
       RETURNING id
     `;
 
-    // Pastikan urutan values sama dengan kolom di atas
+
     await client.query(insertDispQuery, [
       nextId,                     // $1: id (Integer)
       mailId,                     // $2: incoming_mail_id
@@ -67,6 +67,23 @@ export async function POST(
       priority || 'Normal',       // $9: priority (Default Normal)
       due_date || null            // $10: due_date
     ]);
+
+
+  try {
+      const insertNotifQuery = `
+        INSERT INTO himatif.notifications (user_id, title, message, reference_id, reference_type)
+        VALUES ($1, $2, $3, $4, $5)
+      `;
+      await client.query(insertNotifQuery, [
+        target_user_id,
+        'Disposisi Baru',
+        `Anda mendapat instruksi disposisi: "${instruction}"`,
+        mailId, 
+        'DISPOSITION'
+      ]);
+    } catch (notifError) {
+      console.error('Error insert notifikasi disposisi:', notifError);
+    }
 
     // 5. Commit Transaksi
     await client.query('COMMIT');

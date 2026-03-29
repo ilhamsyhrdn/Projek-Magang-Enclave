@@ -21,74 +21,71 @@ export async function PATCH(
 
     await client.query('BEGIN');
 
-    if (action === 'READ') {
-      // User membuka surat (Update status disposisi jadi READ/ON_PROGRESS)
-      const updateDispQuery = `
-        UPDATE himatif.dispositions
-        SET status = 'READ', updated_at = NOW()
-        WHERE incoming_mail_id = $1 AND to_user_id = $2
-        RETURNING id
-      `;
-      const result = await client.query(updateDispQuery, [mailId, user_id]);
+    if (action === 'REPLY' || action === 'ARCHIVE') {
       
-      if (result.rowCount === 0) {
-        throw new Error("Disposisi tidak ditemukan atau bukan milik user ini");
-      }
+      const defaultNote = action === 'ARCHIVE' ? "Surat diarsipkan tanpa balasan." : null;
+      const finalNote = notes || defaultNote;
 
-    } else if (action === 'REPLY') {
-      // User menyelesaikan tugas
+      // 1. Selesaikan tugas disposisi user
       const updateDispQuery = `
         UPDATE himatif.dispositions
         SET status = 'COMPLETED', notes = $3, completed_at = NOW()
         WHERE incoming_mail_id = $1 AND to_user_id = $2
         RETURNING id
       `;
-      // Gunakan notes || null untuk jaga-jaga jika notes kosong
-      const result = await client.query(updateDispQuery, [mailId, user_id, notes || null]);
+      const resultDisp = await client.query(updateDispQuery, [mailId, user_id, finalNote]);
 
-      if (result.rowCount === 0) {
+      if (resultDisp.rowCount === 0) {
         throw new Error("Disposisi tidak ditemukan atau bukan milik user ini");
       }
 
-      // Update Status Surat Utama jadi ARSIP
+      // 2. Update Status Surat Utama jadi ARSIP & Ambil Datanya (RETURNING)
       const updateMailQuery = `
         UPDATE himatif.incoming_mails
         SET status = 'ARSIP', updated_at = NOW()
         WHERE id = $1
+        RETURNING mail_number, subject, mail_date, mail_path
       `;
-      await client.query(updateMailQuery, [mailId]);
-    } else if (action === 'ARCHIVE') {
-      
-      // Update Disposisi User jadi COMPLETED (Selesai)
-      // Jika notes kosong, kita isi default agar informatif
-      const defaultNote = notes || "Surat diarsipkan tanpa balasan.";
-      
-      const updateDispQuery = `
-        UPDATE himatif.dispositions
-        SET status = 'COMPLETED', notes = $3, completed_at = NOW()
-        WHERE incoming_mail_id = $1 AND to_user_id = $2
-        RETURNING id
-      `;
-      const result = await client.query(updateDispQuery, [mailId, user_id, defaultNote]);
+      const resultMail = await client.query(updateMailQuery, [mailId]);
 
-      if (result.rowCount === 0) throw new Error("Disposisi tidak valid");
+      // 3. Masukkan ke tabel archived_documents jika surat berhasil diupdate
+      if (resultMail.rows.length > 0) {
+        const mailData = resultMail.rows[0];
 
-      // Update Surat Utama jadi ARSIP
-      const updateMailQuery = `
-        UPDATE himatif.incoming_mails
-        SET status = 'ARSIP', updated_at = NOW()
-        WHERE id = $1
-      `;
-      await client.query(updateMailQuery, [mailId]);
+        // Cari ID terbesar di archived_documents untuk increment
+        const maxArchQuery = `SELECT MAX(id) as max_id FROM himatif.archived_documents`;
+        const maxArchResult = await client.query(maxArchQuery);
+        const nextArchId = (maxArchResult.rows[0].max_id !== null ? Number(maxArchResult.rows[0].max_id) : 0) + 1;
+
+        // Insert Data Arsip
+        const insertArchiveQuery = `
+          INSERT INTO himatif.archived_documents (
+            id, document_id, document_type, document_number, title, 
+            document_date, archived_date, file_url, archived_by, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7, $8, NOW(), NOW())
+        `;
+        
+        await client.query(insertArchiveQuery, [
+          nextArchId,                  // $1: id urut baru
+          mailId,                      // $2: referensi ID surat masuk
+          'SURAT_MASUK',               // $3: tipe dokumen
+          mailData.mail_number,        // $4: nomor surat dari data RETURNING
+          mailData.subject,            // $5: perihal/judul
+          mailData.mail_date,          // $6: tanggal surat
+          mailData.mail_path || null,  // $7: URL file surat
+          user_id                      // $8: ID user yang mengarsipkan
+        ]);
+      }
+    } else {
+      throw new Error("Action tidak valid. Hanya 'REPLY' atau 'ARCHIVE' yang diperbolehkan.");
     }
 
     await client.query('COMMIT');
-    return NextResponse.json({ message: `Status berhasil diperbarui menjadi ${action}` });
+    return NextResponse.json({ message: `Status berhasil diperbarui menjadi ${action} dan surat masuk ke Arsip.` });
 
   } catch (error: any) {
     await client.query('ROLLBACK');
     console.error('Error tindak lanjut:', error);
-    // Return pesan error 
     return NextResponse.json({ 
       error: error.message || 'Gagal memproses tindak lanjut' 
     }, { status: 500 });

@@ -82,17 +82,15 @@ export async function DELETE(
   const client = await pool.connect();
 
   try {
-    await client.query('BEGIN'); // Mulai Transaksi
-
-    // 1. Hapus dulu data Disposisi yang terkait dengan surat ini
-    // (Penting agar tidak error Foreign Key Constraint)
+    await client.query('BEGIN');
+    
     const deleteDisposisiQuery = `
       DELETE FROM himatif.dispositions 
       WHERE incoming_mail_id = $1
     `;
     await client.query(deleteDisposisiQuery, [mailId]);
 
-    // 2. Hapus Surat Masuk-nya
+    // 2. Hapus Surat Masuk
     const deleteMailQuery = `
       DELETE FROM himatif.incoming_mails 
       WHERE id = $1
@@ -100,7 +98,7 @@ export async function DELETE(
     `;
     const result = await client.query(deleteMailQuery, [mailId]);
 
-    await client.query('COMMIT'); // Simpan perubahan permanen
+    await client.query('COMMIT');
 
     // Cek apakah ada data yang terhapus
     if (result.rows.length === 0) {
@@ -130,7 +128,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { mail_number, mail_date, sender_name, subject, file_url } = body;
+    const { mail_number, mail_date, sender_name, sender_address, sender_organization, received_date, subject, file_url } = body;
 
     const client = await pool.connect();
 
@@ -143,10 +141,13 @@ export async function PUT(
           mail_number = $1,
           mail_date = $2,
           sender_name = $3,
-          subject = $4,
-          mail_path = COALESCE($5, mail_path), 
+          sender_address = $4,
+          sender_organization = $5,
+          received_date = $6,
+          subject = $7,
+          mail_path = COALESCE($8, mail_path), 
           updated_at = NOW()
-        WHERE id = $6
+        WHERE id = $9
         RETURNING *
       `;
 
@@ -154,8 +155,11 @@ export async function PUT(
         mail_number, 
         mail_date, 
         sender_name, 
+        sender_address, 
+        sender_organization, 
+        received_date, 
         subject, 
-        file_url || null, // Jika tidak ada file_url, kirim null agar COALESCE bekerja
+        file_url || null,
         mailId
       ];
 
